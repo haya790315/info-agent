@@ -1,0 +1,5 @@
+django
+pgvector
+PyMuPDF
+sentence-transformers
+psycopg2-binary
