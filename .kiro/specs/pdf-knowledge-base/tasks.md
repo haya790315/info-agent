@@ -1,7 +1,7 @@
 # 实现计划
 
 - [ ] 1. 基础设施：项目骨架与数据库配置
-- [ ] 1.1 创建 Django 项目骨架，安装依赖，配置基础模板
+- [x] 1.1 创建 Django 项目骨架，安装依赖，配置基础模板
   - 初始化 Django 项目 `learn_rag` 和应用 `kb`（`startproject` + `startapp`）
   - 创建 `requirements.txt`，包含：`django`, `pgvector`, `PyMuPDF`, `sentence-transformers`, `psycopg2-binary`
   - 在 `settings.py` 中配置 PostgreSQL 数据库连接、`INSTALLED_APPS` 包含 `'kb'`
@@ -12,7 +12,7 @@
   - 验证：`pip install -r requirements.txt` 成功；`python manage.py check` 无错误输出
   - _Requirements: 1.1_
 
-- [ ] 1.2 配置 pgvector 扩展并定义数据模型，生成迁移
+- [x] 1.2 配置 pgvector 扩展并定义数据模型，生成迁移
   - 创建 `kb/migrations/0001_vector_extension.py`，包含 `VectorExtension()` migration 操作（必须早于 VectorField）
   - 创建 `kb/migrations/0002_initial.py`，定义 `Document`（filename、uploaded_at、status 含四状态 pending/processing/complete/failed、error_message、chunk_count）和 `Chunk`（document FK、content、embedding `VectorField(dimensions=384)`、position）
   - 验证：`python manage.py migrate` 成功执行；PostgreSQL 中 `kb_chunk.embedding` 列类型为 `vector(384)`
@@ -21,14 +21,14 @@
 ---
 
 - [ ] 2. Core：Ingestion 服务层（三个服务可并行实现）
-- [ ] 2.1 (P) 实现文本提取与分块服务
+- [x] 2.1 (P) 实现文本提取与分块服务
   - 实现 `kb/services/processor.py`：`extract_text(pdf_bytes: bytes) -> str`，使用 `pymupdf.open(stream=pdf_bytes, filetype="pdf")` 逐页拼接文本，捕获所有异常向上抛出（图像型 PDF 返回空字符串）
   - 实现 `split_into_chunks(text: str, chunk_size: int = 1000) -> list[str]`，按固定字符数切分：`text` 为空时返回 `[]`；所有块按顺序拼接等于原始 `text`（无字符丢失）
   - 验证：`split_into_chunks('')` 返回 `[]`；1500 字符的字符串返回 2 个块；所有块拼接等于原文本
   - _Requirements: 2.1, 2.2, 3.1_
   - _Boundary: ProcessorService_
 
-- [ ] 2.2 (P) 实现嵌入向量生成服务
+- [x] 2.2 (P) 实现嵌入向量生成服务
   - 实现 `kb/services/embedder.py`：模块级单例 `_model = SentenceTransformer("all-MiniLM-L6-v2")`（避免每次请求重新加载约 90MB 模型权重）
   - 实现 `embed_many(texts: list[str]) -> list[list[float]]`：调用 `_model.encode(texts, normalize_embeddings=True)`，返回 `.tolist()` 转换后的 Python 列表
   - 实现 `embed_one(text: str) -> list[float]`：单文本嵌入，复用 `embed_many`
@@ -36,7 +36,7 @@
   - _Requirements: 4.1, 4.3_
   - _Boundary: EmbedderService_
 
-- [ ] 2.3 (P) 实现向量相似度搜索服务
+- [x] 2.3 (P) 实现向量相似度搜索服务
   - 实现 `kb/services/searcher.py`：`search(query_vector: list[float], top_k: int = 5) -> list[Chunk]`
   - 使用 `Chunk.objects.select_related('document').order_by(CosineDistance('embedding', query_vector))[:top_k]`
   - 验证：Chunk 表为空时返回 `[]`；有数据时返回 ≤ `top_k` 个结果，且每个 Chunk 已预取 `document` 属性（不触发额外查询）
@@ -46,7 +46,7 @@
 ---
 
 - [ ] 3. Core：视图层与模板
-- [ ] 3.1 实现 PDF 上传表单与上传视图
+- [x] 3.1 实现 PDF 上传表单与上传视图
   - 实现 `UploadForm`（`kb/forms.py`）：校验上传文件 content_type 为 `application/pdf`、文件大小 > 0 字节、文件大小 ≤ 10MB（10_485_760 字节），否则返回对应中文错误消息
   - 实现 `UploadView.get()`：渲染 `kb/upload.html`（含 `UploadForm`）
   - 实现 `UploadView.post()`：
