@@ -1,0 +1,33 @@
+{% extends "kb/base.html" %}
+
+{% block title %}{{ document.filename }} — PDFナレッジベース{% endblock %}
+
+{% block content %}
+{# ドキュメント詳細ページ: ファイル名・アップロード日時・処理ステータスを表示する #}
+<h1>{{ document.filename }}</h1>
+
+<dl>
+    <dt>アップロード日時</dt>
+    <dd>{{ document.uploaded_at }}</dd>
+
+    <dt>ステータス</dt>
+    <dd>
+        {% if document.status == "processing" %}
+            {# 処理中 #}
+            处理中
+        {% elif document.status == "complete" %}
+            {# 処理完了: チャンク数も表示する #}
+            処理完成（チャンク数: {{ document.chunk_count }}）
+        {% elif document.status == "failed" %}
+            {# 処理失敗: エラーメッセージを表示する #}
+            処理失敗
+            {% if document.error_message %}
+                <p>{{ document.error_message }}</p>
+            {% endif %}
+        {% else %}
+            {# pending: 処理待ち #}
+            等待処理
+        {% endif %}
+    </dd>
+</dl>
+{% endblock %}

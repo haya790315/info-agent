@@ -1,9 +1,10 @@
 """
 kbアプリのビュー定義
 UploadView: PDF アップロード + ingestion pipeline の調整を担当する
+DocumentDetailView: ドキュメント詳細表示を担当する
 """
 from django.db import transaction
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from kb.forms import UploadForm
@@ -75,3 +76,17 @@ class UploadView(View):
 
         # 成功・失敗どちらの場合もドキュメント詳細ページへリダイレクト
         return redirect("kb:document_detail", pk=doc.pk)
+
+
+class DocumentDetailView(View):
+    """ドキュメント詳細ページを表示するビュー
+
+    GET /documents/{pk}/ → 指定 pk のドキュメント詳細を表示する
+    存在しない pk の場合は 404 を返す
+    """
+
+    def get(self, request, pk):
+        """ドキュメント詳細ページを返す"""
+        # 存在しない pk の場合は 404 を返す
+        doc = get_object_or_404(Document, pk=pk)
+        return render(request, "kb/document_detail.html", {"document": doc})

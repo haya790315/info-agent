@@ -60,7 +60,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 3.1, 3.2, 3.3, 4.1, 4.3_
   - _Depends: 2.1, 2.2_
 
-- [ ] 3.2 实现文档详情视图与模板
+- [x] 3.2 实现文档详情视图与模板
   - 实现 `DocumentDetailView.get()`：`get_object_or_404(Document, pk=pk)` 获取文档，渲染 `kb/document_detail.html`
   - `kb/templates/kb/document_detail.html`：展示文件名、上传时间；根据 `document.status` 条件渲染：`processing` → "处理中"；`complete` → "处理完成" + chunk_count；`failed` → "处理失败" + error_message；`pending` → "等待处理"
   - 在 `kb/urls.py` 中注册 `path('documents/<int:pk>/', DocumentDetailView.as_view(), name='document_detail')`
