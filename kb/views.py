@@ -2,14 +2,15 @@
 kbアプリのビュー定義
 UploadView: PDF アップロード + ingestion pipeline の調整を担当する
 DocumentDetailView: ドキュメント詳細表示を担当する
+SearchView: セマンティック検索を担当する
 """
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from kb.forms import UploadForm
+from kb.forms import SearchForm, UploadForm
 from kb.models import Chunk, Document
-from kb.services import embedder, processor
+from kb.services import embedder, processor, searcher
 
 
 class UploadView(View):
@@ -76,6 +77,44 @@ class UploadView(View):
 
         # 成功・失敗どちらの場合もドキュメント詳細ページへリダイレクト
         return redirect("kb:document_detail", pk=doc.pk)
+
+
+class SearchView(View):
+    """セマンティック検索ビュー
+
+    GET  /search/  → 空のフォームを表示する
+    POST /search/  → クエリをベクトル化して類似チャンクを検索し結果を返す
+                     HX-Request ヘッダーが付く場合はパーシャルのみ返す
+    """
+
+    def get(self, request):
+        # 初回表示：空フォームを渡し、chunks は未設定
+        form = SearchForm()
+        return render(request, "kb/search.html", {"form": form, "chunks": None})
+
+    def post(self, request):
+        # HTMX リクエスト判定
+        is_htmx = request.headers.get("HX-Request") == "true"
+        form = SearchForm(request.POST)
+
+        if not form.is_valid():
+            # バリデーションエラー時：HTMX はパーシャル、通常はフルページ
+            ctx = {"form": form, "chunks": None}
+            if is_htmx:
+                return render(request, "kb/partials/search_results.html", ctx)
+            return render(request, "kb/search.html", ctx)
+
+        # クエリをベクトル化して類似チャンクを検索
+        query = form.cleaned_data["query"]
+        vector = embedder.embed_one(query)
+        chunks = searcher.search(vector)
+
+        ctx = {"form": form, "chunks": chunks}
+        if is_htmx:
+            # HTMX：パーシャルのみ返す（<html> なし）
+            return render(request, "kb/partials/search_results.html", ctx)
+        # 通常リクエスト：フルページ（パーシャルは search.html 内で include）
+        return render(request, "kb/search.html", ctx)
 
 
 class DocumentDetailView(View):

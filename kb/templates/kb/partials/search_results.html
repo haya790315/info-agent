@@ -1,0 +1,32 @@
+{% comment %}
+検索結果パーシャルテンプレート
+HTMX から直接呼ばれる場合も、search.html に include される場合も共用する
+完全な HTML 構造は持たない（<html> タグなし）
+{% endcomment %}
+{% if form.errors %}
+    <div class="error-messages">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <p class="error">{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <p class="error">{{ error }}</p>
+        {% endfor %}
+    </div>
+{% elif chunks is None %}
+    {# 初回表示：結果なし（未検索状態） #}
+{% elif chunks %}
+    {# 検索結果あり：各チャンクの内容とファイル名を表示 #}
+    <ul class="search-results">
+        {% for chunk in chunks %}
+            <li class="search-result-item">
+                <p class="chunk-content">{{ chunk.content }}</p>
+                <small class="chunk-source">出典：{{ chunk.document.filename }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    {# 検索結果なし #}
+    <p class="no-results">暂无可搜索的文档</p>
+{% endif %}

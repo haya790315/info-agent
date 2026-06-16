@@ -67,7 +67,7 @@
   - 验证：访问已处理完成文档的详情页，页面包含文件名、"处理完成"文本和非零的 chunk 数量；访问不存在的 ID 返回 404
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 3.3 实现语义搜索视图、表单与 HTMX 模板
+- [x] 3.3 实现语义搜索视图、表单与 HTMX 模板
   - 实现 `SearchForm`（`kb/forms.py`）：校验 `query` 字段非空，否则返回错误消息
   - 实现 `SearchView.get()`：渲染 `kb/search.html`（结果区 `<div id="results">` 初始为空）
   - 实现 `SearchView.post()`：

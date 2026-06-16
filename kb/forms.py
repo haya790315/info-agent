@@ -1,6 +1,7 @@
 """
 kbアプリのフォーム定義
 PDF アップロードバリデーションを担当する
+セマンティック検索クエリのバリデーションも担当する
 """
 from django import forms
 
@@ -45,3 +46,19 @@ class UploadForm(forms.Form):
             )
 
         return file
+
+
+class SearchForm(forms.Form):
+    # required=False にして clean_query でカスタムエラーを出す
+    query = forms.CharField(
+        label="検索クエリ",
+        required=False,
+        strip=True,
+    )
+
+    def clean_query(self):
+        # 空文字・空白のみのクエリは無効とする（カスタムメッセージ）
+        query = self.cleaned_data.get("query", "")
+        if not query:
+            raise forms.ValidationError("検索クエリを入力してください。")
+        return query
