@@ -4,6 +4,7 @@ Document（ドキュメントメタデータ + ステータス管理）と
 Chunk（テキストブロック + 埋め込みベクトル）を定義する
 """
 from django.db import models
+from pgvector.django import VectorField
 
 
 class Document(models.Model):
@@ -51,7 +52,8 @@ class Chunk(models.Model):
         related_name='chunks',
     )
     content   = models.TextField()
-    # VectorField はマイグレーション後に pgvector から追加される（Task 1.2 で定義）
+    # all-MiniLM-L6-v2 の出力次元数に合わせた 384 次元の埋め込みベクトル
+    embedding = VectorField(dimensions=384)
     position  = models.IntegerField()  # ドキュメント内の0始まりの順序
 
     class Meta:
