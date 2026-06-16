@@ -1,0 +1,22 @@
+{
+  "feature_name": "pdf-knowledge-base",
+  "created_at": "2026-06-16T00:00:00+00:00",
+  "updated_at": "2026-06-16T03:00:00+00:00",
+  "language": "zh-CN",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}
