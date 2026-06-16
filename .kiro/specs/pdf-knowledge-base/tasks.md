@@ -105,7 +105,7 @@
   - _Requirements: 1.3, 1.4, 2.1, 2.2, 3.1, 4.1, 4.3_
   - _Boundary: UploadView, ProcessorService, EmbedderService_
 
-- [ ] 4.3 (P) 语义搜索端到端集成测试
+- [x] 4.3 (P) 语义搜索端到端集成测试
   - 先 ingestion 含特定关键词的 PDF，再以该关键词搜索 → 验证返回 ≤ 5 个 Chunk，且 Chunk 中包含该关键词
   - 空数据库状态下搜索任意词 → 验证局部模板响应含"暂无可搜索的文档"
   - 带 `HTTP_HX_REQUEST: true` 头 POST `/search/` → 验证响应体不含 `<html>` 标签
