@@ -85,7 +85,7 @@
 ---
 
 - [ ] 4. 测试
-- [ ] 4.1 (P) 服务层单元测试
+- [x] 4.1 (P) 服务层单元测试
   - `ProcessorService.split_into_chunks`：测试空字符串返回 `[]`；1500 字符返回 2 个块；所有块拼接等于原文本
   - `ProcessorService.extract_text`：使用包含文本的真实 PDF fixture，验证返回非空字符串
   - `EmbedderService.embed_one`：验证返回长度为 384 的 float 列表
