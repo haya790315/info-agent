@@ -95,7 +95,7 @@
   - _Requirements: 2.1, 3.1, 4.1_
   - _Boundary: ProcessorService, EmbedderService, SearcherService_
 
-- [ ] 4.2 (P) Ingestion 集成测试
+- [x] 4.2 (P) Ingestion 集成测试
   - 上传含文本的真实 PDF fixture → 验证 `Document.status == 'complete'` 且 `Chunk.objects.filter(document=doc).count() > 0`
   - 上传图像型 PDF（无可提取文本）→ 验证 `Document.status == 'failed'` 且 `error_message` 非空字符串
   - Django test client 提交非 PDF 文件 → 验证响应状态码为 200，响应体含表单错误文本
