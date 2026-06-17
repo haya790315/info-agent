@@ -94,8 +94,8 @@ class SearchViewPostValidTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:search")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_returns_200(self, mock_embedder, mock_searcher):
         """有効なクエリの POST は HTTP 200 を返す"""
         mock_embedder.embed_one.return_value = [0.1] * 384
@@ -104,8 +104,8 @@ class SearchViewPostValidTest(TestCase):
         response = self.client.post(self.url, {"query": "Python とは"})
         self.assertEqual(response.status_code, 200)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_calls_embed_one(self, mock_embedder, mock_searcher):
         """有効なクエリの POST は embedder.embed_one を呼び出す"""
         mock_embedder.embed_one.return_value = [0.1] * 384
@@ -115,8 +115,8 @@ class SearchViewPostValidTest(TestCase):
 
         mock_embedder.embed_one.assert_called_once_with("Python とは")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_calls_search(self, mock_embedder, mock_searcher):
         """有効なクエリの POST は searcher.search を呼び出す"""
         vector = [0.1] * 384
@@ -127,8 +127,8 @@ class SearchViewPostValidTest(TestCase):
 
         mock_searcher.search.assert_called_once_with(vector)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_regular_renders_full_page(
         self, mock_embedder, mock_searcher
     ):
@@ -141,8 +141,8 @@ class SearchViewPostValidTest(TestCase):
         self.assertTemplateUsed(response, "kb/search.html")
         self.assertTemplateUsed(response, "kb/partials/search_results.html")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_htmx_renders_partial_only(
         self, mock_embedder, mock_searcher
     ):
@@ -162,8 +162,8 @@ class SearchViewPostValidTest(TestCase):
         self.assertNotIn("<html", content)
         self.assertTemplateUsed(response, "kb/partials/search_results.html")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_htmx_contains_results(
         self, mock_embedder, mock_searcher
     ):
@@ -182,8 +182,8 @@ class SearchViewPostValidTest(TestCase):
         self.assertIn("Python は汎用プログラミング言語です", content)
         self.assertIn("python_guide.pdf", content)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_post_valid_query_empty_results_shows_no_docs_message(
         self, mock_embedder, mock_searcher
     ):

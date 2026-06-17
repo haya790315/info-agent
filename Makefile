@@ -32,4 +32,4 @@ dev:
 	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver
 
 test:
-	uv run python manage.py test kb --settings=rag_agent.test_settings
+	uv run python manage.py test knowledge_base --settings=config.test_settings

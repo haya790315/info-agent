@@ -4,6 +4,11 @@ kbアプリのURLルーティング設定
 """
 from django.urls import path
 
+from knowledge_base.api_views import (
+    DocumentDetailAPIView,
+    DocumentListAPIView,
+    SearchAPIView,
+)
 from knowledge_base.views import DocumentDetailView, SearchView, UploadView
 
 # アプリケーション名前空間（テンプレートで {% url 'kb:...' %} として参照）
@@ -16,4 +21,9 @@ urlpatterns = [
     path('documents/<int:pk>/', DocumentDetailView.as_view(), name='document_detail'),
     # Task 3.3: セマンティック検索ビュー
     path('search/', SearchView.as_view(), name='search'),
+    # Task 6.1: ドキュメント一覧 / 詳細 JSON API
+    path('api/documents/', DocumentListAPIView.as_view(), name='api_document_list'),
+    path('api/documents/<int:pk>/', DocumentDetailAPIView.as_view(), name='api_document_detail'),
+    # Task 6.2: セマンティック検索 JSON API
+    path('api/search/', SearchAPIView.as_view(), name='api_search'),
 ]

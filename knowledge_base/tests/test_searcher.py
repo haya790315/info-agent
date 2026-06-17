@@ -42,7 +42,7 @@ class SearchMockTest(SimpleTestCase):
         """テスト用の 384 次元クエリベクトルを生成"""
         return [0.1] * size
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_empty_queryset_returns_empty_list(self, mock_chunk_cls):
         """Chunk テーブルが空のとき [] を返す"""
         # モックチェーンの設定：空のリストを返す
@@ -56,7 +56,7 @@ class SearchMockTest(SimpleTestCase):
         # スライス [:5] が呼ばれていることを確認
         mock_qs.__getitem__.assert_called_once()
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_select_related_document_is_called(self, mock_chunk_cls):
         """select_related('document') が呼ばれること"""
         mock_qs = MagicMock()
@@ -69,8 +69,8 @@ class SearchMockTest(SimpleTestCase):
 
         mock_qs.select_related.assert_called_once_with('document')
 
-    @patch('kb.services.searcher.CosineDistance')
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.CosineDistance')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_order_by_cosine_distance_is_called(self, mock_chunk_cls, mock_cosine_distance):
         """order_by(CosineDistance('embedding', query_vector)) が呼ばれること"""
         query_vector = [0.1] * 384
@@ -90,7 +90,7 @@ class SearchMockTest(SimpleTestCase):
         # order_by に CosineDistance インスタンスが渡されること
         mock_qs.order_by.assert_called_once_with(mock_cosine_distance_instance)
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_top_k_slice_is_applied(self, mock_chunk_cls):
         """[:top_k] のスライスが適用されること"""
         mock_qs = MagicMock()
@@ -104,7 +104,7 @@ class SearchMockTest(SimpleTestCase):
         # slice(None, 3) が呼ばれていることを確認
         mock_qs.__getitem__.assert_called_once_with(slice(None, 3))
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_default_top_k_is_5(self, mock_chunk_cls):
         """デフォルト top_k=5 の場合 [:5] のスライスが適用されること"""
         mock_qs = MagicMock()
@@ -117,7 +117,7 @@ class SearchMockTest(SimpleTestCase):
 
         mock_qs.__getitem__.assert_called_once_with(slice(None, 5))
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_returns_queryset_results(self, mock_chunk_cls):
         """search がクエリセットの結果をそのまま返すこと"""
         # モック Chunk オブジェクトを2つ用意
@@ -137,7 +137,7 @@ class SearchMockTest(SimpleTestCase):
 
         self.assertEqual(result, expected)
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_method_chain_order(self, mock_chunk_cls):
         """select_related → order_by → スライス の順序でチェーンされること"""
         call_order = []

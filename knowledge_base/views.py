@@ -4,6 +4,7 @@ UploadView: PDF アップロード + ingestion pipeline の調整を担当する
 DocumentDetailView: ドキュメント詳細表示を担当する
 SearchView: セマンティック検索を担当する
 """
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -35,17 +36,23 @@ class UploadView(View):
 
         file = form.cleaned_data["pdf_file"]
 
-        # ドキュメントレコードを作成し、処理中に更新
+        # アップロードバイトは一度だけ読み取る（read-once 競合の回避）
+        # 同じ bytes を「原本保存」と「テキスト抽出」の両方に使い回す
+        pdf_bytes = file.read()
+
+        # ドキュメントレコードを作成
         doc = Document.objects.create(
             filename=file.name,
             status=Document.STATUS_PENDING,
         )
+        # ingestion より前に原本 PDF を保存する
+        # → 抽出/埋め込みが失敗（画像型 PDF 等）しても原本は残り、詳細ページから閲覧可能
+        doc.file.save(file.name, ContentFile(pdf_bytes), save=False)
         doc.status = Document.STATUS_PROCESSING
         doc.save()
 
         try:
-            # テキスト抽出
-            pdf_bytes = file.read()
+            # テキスト抽出（保存済みの pdf_bytes を再利用）
             text = processor.extract_text(pdf_bytes)
 
             # 画像型 PDF（テキストなし）は処理不可

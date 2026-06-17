@@ -30,8 +30,8 @@ class IngestionCompleteTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:upload")
 
-    @patch("kb.views.Chunk.objects.bulk_create")
-    @patch("kb.views.embedder.embed_many")
+    @patch("knowledge_base.views.Chunk.objects.bulk_create")
+    @patch("knowledge_base.views.embedder.embed_many")
     def test_text_pdf_sets_status_complete(self, mock_embed_many, mock_bulk_create):
         """テキスト入り PDF をアップロードすると Document.status が complete になる"""
         # 埋め込み生成：ダミーの 384 次元ベクトルを返す
@@ -50,8 +50,8 @@ class IngestionCompleteTest(TestCase):
         self.assertIsNotNone(doc)
         self.assertEqual(doc.status, Document.STATUS_COMPLETE)
 
-    @patch("kb.views.Chunk.objects.bulk_create")
-    @patch("kb.views.embedder.embed_many")
+    @patch("knowledge_base.views.Chunk.objects.bulk_create")
+    @patch("knowledge_base.views.embedder.embed_many")
     def test_text_pdf_sets_positive_chunk_count(self, mock_embed_many, mock_bulk_create):
         """テキスト入り PDF のアップロード後、Document.chunk_count が 0 より大きい"""
         # 1 チャンク分のダミーベクトルを返す
@@ -77,7 +77,7 @@ class IngestionFailedTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:upload")
 
-    @patch("kb.views.processor.extract_text")
+    @patch("knowledge_base.views.processor.extract_text")
     def test_image_pdf_sets_status_failed(self, mock_extract_text):
         """テキスト抽出が空文字を返す PDF は Document.status が failed になる"""
         # 画像型 PDF を模倣：extract_text が空文字列を返す
@@ -94,7 +94,7 @@ class IngestionFailedTest(TestCase):
         self.assertIsNotNone(doc)
         self.assertEqual(doc.status, Document.STATUS_FAILED)
 
-    @patch("kb.views.processor.extract_text")
+    @patch("knowledge_base.views.processor.extract_text")
     def test_image_pdf_has_non_empty_error_message(self, mock_extract_text):
         """テキスト抽出が空文字を返す PDF は error_message が非空文字列になる"""
         mock_extract_text.return_value = ""

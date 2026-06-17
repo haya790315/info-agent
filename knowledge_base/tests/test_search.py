@@ -21,8 +21,8 @@ class SearchKeywordEndToEndTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:search")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_keyword_search_returns_chunk_containing_keyword(
         self, mock_embedder, mock_searcher
     ):
@@ -45,8 +45,8 @@ class SearchKeywordEndToEndTest(TestCase):
         # キーワードがレスポンスに含まれること
         self.assertIn("RAGシステムについて", content)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_keyword_search_returns_at_most_5_chunks(
         self, mock_embedder, mock_searcher
     ):
@@ -77,8 +77,8 @@ class SearchEmptyDatabaseTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:search")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_empty_db_search_shows_no_docs_message(
         self, mock_embedder, mock_searcher
     ):
@@ -105,8 +105,8 @@ class SearchHtmxPartialTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:search")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_htmx_request_returns_partial_without_html_tag(
         self, mock_embedder, mock_searcher
     ):
@@ -127,8 +127,8 @@ class SearchHtmxPartialTest(TestCase):
         # パーシャルレスポンスなので <html> タグが含まれないこと
         self.assertNotIn("<html", content)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_htmx_request_empty_results_returns_partial_without_html_tag(
         self, mock_embedder, mock_searcher
     ):
@@ -154,8 +154,8 @@ class SearchEmptyQueryValidationTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:search")
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_empty_query_returns_validation_error(
         self, mock_embedder, mock_searcher
     ):
@@ -166,8 +166,8 @@ class SearchEmptyQueryValidationTest(TestCase):
         # バリデーションエラーメッセージが含まれること
         self.assertIn("検索クエリを入力してください", content)
 
-    @patch("kb.views.searcher")
-    @patch("kb.views.embedder")
+    @patch("knowledge_base.views.searcher")
+    @patch("knowledge_base.views.embedder")
     def test_empty_query_does_not_call_embedder_or_searcher(
         self, mock_embedder, mock_searcher
     ):

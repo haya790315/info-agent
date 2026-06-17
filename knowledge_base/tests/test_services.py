@@ -129,7 +129,7 @@ class SearchServiceTest(SimpleTestCase):
         mock_qs.__getitem__ = MagicMock(return_value=return_value)
         return mock_qs
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_empty_result_returns_empty_list(self, mock_chunk_cls):
         # Chunk テーブルが空の場合、search は [] を返す
         mock_qs = self._make_mock_queryset(return_value=[])
@@ -141,7 +141,7 @@ class SearchServiceTest(SimpleTestCase):
         mock_qs.__getitem__.assert_called_once()
         self.assertEqual(list(result), [])
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_search_returns_mock_chunks(self, mock_chunk_cls):
         # search は Chunk オブジェクトのリストをそのまま返す
         chunk1 = MagicMock()
@@ -154,7 +154,7 @@ class SearchServiceTest(SimpleTestCase):
         result = search(self._make_query_vector(), top_k=5)
         self.assertEqual(result, expected)
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_select_related_document_called(self, mock_chunk_cls):
         # select_related('document') が呼ばれること
         mock_qs = self._make_mock_queryset()
@@ -163,7 +163,7 @@ class SearchServiceTest(SimpleTestCase):
         search(self._make_query_vector())
         mock_qs.select_related.assert_called_once_with('document')
 
-    @patch('kb.services.searcher.Chunk')
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_top_k_slice_applied(self, mock_chunk_cls):
         # [:top_k] のスライスが適用されること
         mock_qs = self._make_mock_queryset()

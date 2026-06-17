@@ -199,3 +199,31 @@
 - **アプローチ**：Option C（ハイブリッド）— 保存は既存拡張、API は新規モジュール
 - **DRF は導入しない**：組み込み `JsonResponse` で十分、既存方針に整合
 - **要件 11 を最初に実装**：API（要件 8/10）のリンク項目が依存するため、原本保存・リンク基盤を先に確定させると手戻りが少ない
+
+---
+
+# 設計合成（要件 8〜11）
+
+> 2026-06-18。ライト・ディスカバリ + 合成の結果。ユーザー決定：**PDF はまずローカルに保存し、保存先（オブジェクトストレージ等）は後で扱う**。
+
+## Build vs Adopt
+- **採用**：Django 組み込み `FileField` + `FileSystemStorage`（ローカル `MEDIA_ROOT`）。**新規 pip 依存なし、DRF なし**。学習プロジェクトかつ「まずローカル保存」方針に最適
+- **採用**：API は組み込み `JsonResponse` + `View`。既存ビューと同じ素の Django 流儀
+
+## 簡素化（Simplification）
+- **専用ダウンロードビューを作らない**：`FileField.url`（MEDIA_URL + パス）+ 開発時 MEDIA 配信（`static()` ヘルパ）で要件 11.2/11.4（原本配信 + 安定リンク）を満たす。本番向けの専用 `FileResponse` ビューは境界外（後続）
+- **シリアライザ層を新設しない**：`api_views.py` 内のモジュール関数（`_document_dict` / `_chunk_dict` / `_file_url`）で十分。DRF Serializer は過剰
+
+## 設計上の解決（Research Needed への回答）
+1. **ファイル読み取り順序**：`pdf_bytes = file.read()` で 1 回だけ読み、`ContentFile(pdf_bytes)` で原本保存し、同じ `pdf_bytes` を `extract_text()` に渡す。再読込・`seek(0)` 不要、read-once 競合を回避
+2. **配信方式**：ローカル `FileField` + 開発時 MEDIA 配信（上記簡素化）
+3. **リンクの絶対 URL 化**：`request.build_absolute_uri(doc.file.url)` で絶対 URL を返す（TS Agent / ブラウザが直接開ける）。`file` 未設定時は `null`
+4. **API URL 構造**：`/api/search/`（POST）、`/api/documents/`（GET）、`/api/documents/<int:pk>/`（GET）。原本は `file_url`（MEDIA URL）で参照、専用配信ルートは作らない
+5. **CORS / CSRF**：
+   - **CORS 不要**：Tool 呼び出しは Bun（サーバ）→ Django（サーバ）のサーバ間通信。原本リンクはブラウザのトップレベル遷移（XHR ではない）。いずれもブラウザ CORS の対象外
+   - **CSRF**：検索 API（POST）はセッション認証を使わないサーバ間呼び出しのため `csrf_exempt`。学習プロジェクトで許容（認証は境界外）
+
+## リスクと緩和
+- **原本の重複・肥大**：`upload_to='pdfs/'` 配下に蓄積。学習用途で許容。クリーンアップは境界外
+- **本番 MEDIA 配信**：`static()` は DEBUG 時のみ。本番は別途 Web サーバ設定が必要 → 「保存先は後で扱う」方針に合致、境界外として明記
+- **既存行への影響**：`FileField(blank=True, null=True)` で追加。既存 Document 行・抽出失敗時も NULL 許容で破綻しない

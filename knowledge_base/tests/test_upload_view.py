@@ -155,8 +155,8 @@ class UploadViewPostValidPdfTest(TestCase):
         self.client = Client()
         self.url = reverse("knowledge_base:upload")
 
-    @patch("kb.views.embedder")
-    @patch("kb.views.processor")
+    @patch("knowledge_base.views.embedder")
+    @patch("knowledge_base.views.processor")
     def test_post_valid_pdf_calls_extract_text(self, mock_processor, mock_embedder):
         """有効な PDF の POST は processor.extract_text を呼び出す"""
         # processor.extract_text が有効なテキストを返すようにモック
@@ -172,8 +172,8 @@ class UploadViewPostValidPdfTest(TestCase):
 
         mock_processor.extract_text.assert_called_once()
 
-    @patch("kb.views.embedder")
-    @patch("kb.views.processor")
+    @patch("knowledge_base.views.embedder")
+    @patch("knowledge_base.views.processor")
     def test_post_valid_pdf_calls_embed_many(self, mock_processor, mock_embedder):
         """有効な PDF の POST は embedder.embed_many を呼び出す"""
         mock_processor.extract_text.return_value = "Sample text content"
@@ -188,8 +188,8 @@ class UploadViewPostValidPdfTest(TestCase):
 
         mock_embedder.embed_many.assert_called_once_with(["Sample text content"])
 
-    @patch("kb.views.embedder")
-    @patch("kb.views.processor")
+    @patch("knowledge_base.views.embedder")
+    @patch("knowledge_base.views.processor")
     def test_post_valid_pdf_redirects_to_document_detail(
         self, mock_processor, mock_embedder
     ):
@@ -207,8 +207,8 @@ class UploadViewPostValidPdfTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/documents/", response["Location"])
 
-    @patch("kb.views.embedder")
-    @patch("kb.views.processor")
+    @patch("knowledge_base.views.embedder")
+    @patch("knowledge_base.views.processor")
     def test_post_pdf_with_empty_text_sets_status_failed(
         self, mock_processor, mock_embedder
     ):

@@ -113,3 +113,73 @@
   - 验证：`python manage.py test kb.tests.test_search` 全部通过
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3_
   - _Boundary: SearchView, EmbedderService, SearcherService_
+
+---
+
+- [ ] 5. 基础设施扩展：原始文件存储
+- [x] 5.1 配置 MEDIA 与 Document 文件字段
+  - 在 `config/settings.py` 配置 `MEDIA_URL` 与 `MEDIA_ROOT`（指向 `BASE_DIR / "media"`，本地文件系统）
+  - 在 `config/urls.py` 增加 `from django.conf.urls.static import static` 与 `from django.conf import settings` 导入，并在 `settings.DEBUG` 为真时追加 `static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)` 配信（开发环境下原文可经链接访问）
+  - 为 `Document` 增加可空的原始 PDF 文件字段（`FileField(upload_to='pdfs/', blank=True, null=True)`），生成并应用迁移 `0003_document_file`
+  - 验证：`python manage.py migrate` 成功；Django shell 中 `Document` 实例具有 `file` 字段；`DEBUG=True` 下手动放置文件后经 `/media/pdfs/...` 访问返回文件内容
+  - _Requirements: 11.1, 11.2_
+  - _Boundary: Document, settings, 项目 URL 配置_
+
+- [x] 5.2 (P) 在上传流程中持久化原始 PDF
+  - 改写既有 `UploadView.post()` 的读取/保存顺序（修改已完成代码，非纯追加）：将 `file.read()` 提前到创建 Document 之后、ingestion 之前；仅读取一次字节，用 `ContentFile(pdf_bytes)` 保存到 `doc.file`（`save=False`），随后置 `status=processing` 保存，再以同一 `pdf_bytes` 执行既有 `extract_text`
+  - 原文保存先于 ingestion：即使后续提取/嵌入抛异常（如图像型 PDF），原始 PDF 仍被保留
+  - 验证：上传含文本 PDF 后 `Document.file` 非空且 `doc.file.read()` 等于上传字节；上传图像型 PDF（ingestion 失败）后 `status=='failed'` 但 `Document.file` 仍非空
+  - _Requirements: 11.1_
+  - _Depends: 5.1_
+  - _Boundary: UploadView_
+
+- [x] 5.3 (P) 在文档详情页展示查看原文链接
+  - 在 `document_detail.html` 模板中，当 `document.file` 存在时渲染指向 `document.file.url` 的查看链接（`target="_blank"` 新标签页打开）；无原文时不渲染该链接
+  - 验证：以直接赋值 `file` 字段构造的（自造 fixture，不依赖 5.2 的上传流程）已存原文文档，其详情页 HTML 含指向原文 URL 的链接；`file` 为空的文档详情页不含该链接
+  - _Requirements: 5.5, 11.4_
+  - _Depends: 5.1_
+  - _Boundary: document_detail.html 模板_
+
+---
+
+- [ ] 6. Core：只读 JSON API
+- [x] 6.1 实现文档列表与详情 JSON API
+  - 实现序列化助手 `_file_url`（`doc.file` 为真时经 `request.build_absolute_uri(doc.file.url)` 返回绝对 URL，否则 `None`）与 `_document_dict`（id / 文件名 / 状态 / 块数 / 上传时间 ISO / 错误信息 / 原文绝对链接）
+  - 实现文档列表端点（`GET /api/documents/`）：返回 `{"documents": [...]}`，空库为空数组；纯 JSON 无 HTML 包装
+  - 实现文档详情端点（`GET /api/documents/<int:pk>/`）：有效 ID 返回完整字段；不存在 ID 返回 404 + `{"error": ...}`（JSON）
+  - 在应用 URL 配置注册上述两个端点
+  - 验证：`GET /api/documents/` 返回 JSON 数组且每项含 `file_url` 字段；`GET` 不存在 ID 返回 404 且响应体为 JSON 错误；响应不含 `<html>`
+  - _Requirements: 9.1, 9.2, 9.3, 10.1, 10.2, 10.3, 11.3, 11.4_
+  - _Depends: 5.1_
+  - _Boundary: api_views, 应用 URL 配置_
+
+- [x] 6.2 实现语义搜索 JSON API
+  - 实现 `_chunk_dict` 序列化助手：将 Chunk 转为含内容 / 所属文档名 / 文档 ID / 原文绝对链接的字典（复用 searcher 已预取的 `chunk.document`，不触发额外查询）
+  - 实现搜索端点（`POST /api/search/`，`Content-Type: application/json`，body 为 `{"query": ...}`）：解析 JSON body 并复用既有 `SearchForm` 查询校验，空/缺失/非法 JSON → 400 + `{"error": ...}` 且不调用 embedder/searcher；有效查询经 `embed_one` + `search(top_k=5)` 返回 `{"results": [...]}`
+  - 对搜索端点豁免 CSRF（`csrf_exempt`，服务端到服务端调用）；Chunk 表为空时返回 `results` 为空列表而非错误
+  - 在应用 URL 配置注册该端点
+  - 验证：以 JSON body 提交关键词 `POST /api/search/` 返回 ≤5 个含 `file_url` 的结果；空查询返回 400 JSON 且不触发嵌入；空库返回 `results` 为空列表；响应不含 `<html>`
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 11.4_
+  - _Depends: 5.1, 6.1_
+  - _Boundary: api_views, 应用 URL 配置_
+
+---
+
+- [ ] 7. 测试：文件存储与 JSON API
+- [x] 7.1 (P) 原始文件存储与详情链接测试
+  - 上传含文本 PDF → `Document.file` 非空且字节匹配上传内容；上传图像型 PDF → `status=='failed'` 但 `Document.file` 仍非空
+  - 以自造 `file` fixture 的文档 → 详情页 HTML 含查看原文链接；无 `file` 的文档 → 详情页不含该链接
+  - 验证：`python manage.py test knowledge_base.tests.test_file_storage` 全部通过
+  - _Requirements: 5.5, 11.1, 11.2_
+  - _Depends: 5.2, 5.3_
+  - _Boundary: UploadView, document_detail.html_
+
+- [x] 7.2 (P) JSON API 测试
+  - 列表 API：有 / 无文档分别返回非空数组 / 空数组，每项含 `file_url`
+  - 详情 API：有效 ID 返回完整字段 + `file_url`；不存在 ID 返回 404 JSON
+  - 搜索 API：JSON body 关键词 → ≤5 结果含 `file_url`；空查询 → 400 且不调用 embedder/searcher；空库 → `results` 空列表；响应不含 `<html>`
+  - `file_url` 空值：`file` 为空的文档其 JSON 中 `file_url` 为 `null`
+  - 验证：`python manage.py test knowledge_base.tests.test_api` 全部通过
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 10.1, 10.2, 10.3, 11.3, 11.4_
+  - _Depends: 6.1, 6.2_
+  - _Boundary: api_views_

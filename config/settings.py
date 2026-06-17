@@ -90,6 +90,11 @@ USE_TZ = True
 # 静的ファイル設定
 STATIC_URL = "static/"
 
+# メディアファイル設定（アップロードされた原本 PDF の保存先）
+# 初版はローカルファイルシステムに保存する（保存先の本番対応は後続）
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # デフォルトの主キーフィールド
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

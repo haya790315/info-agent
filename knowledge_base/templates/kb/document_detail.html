@@ -29,5 +29,11 @@
             等待処理
         {% endif %}
     </dd>
+
+    {# 原本 PDF が保存されている場合のみ、原文の閲覧リンクを表示する #}
+    {% if document.file %}
+        <dt>原本ファイル</dt>
+        <dd><a href="{{ document.file.url }}" target="_blank" rel="noopener">原文を表示</a></dd>
+    {% endif %}
 </dl>
 {% endblock %}

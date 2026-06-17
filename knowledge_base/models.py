@@ -24,6 +24,9 @@ class Document(models.Model):
     ]
 
     filename      = models.CharField(max_length=255)
+    # アップロードされた原本 PDF（ローカルの MEDIA_ROOT/pdfs/ に保存）
+    # blank/null 許可：既存行や原本未保存のケースでも破綻しないようにする
+    file          = models.FileField(upload_to='pdfs/', blank=True, null=True)
     uploaded_at   = models.DateTimeField(auto_now_add=True)
     status        = models.CharField(
         max_length=20,
