@@ -2,12 +2,12 @@
 
 - [ ] 1. 基础设施：项目骨架与数据库配置
 - [x] 1.1 创建 Django 项目骨架，安装依赖，配置基础模板
-  - 初始化 Django 项目 `learn_rag` 和应用 `kb`（`startproject` + `startapp`）
+  - 初始化 Django 项目 `rag_agent` 和应用 `kb`（`startproject` + `startapp`）
   - 创建 `requirements.txt`，包含：`django`, `pgvector`, `PyMuPDF`, `sentence-transformers`, `psycopg2-binary`
   - 在 `settings.py` 中配置 PostgreSQL 数据库连接、`INSTALLED_APPS` 包含 `'kb'`
   - 创建 `kb/services/__init__.py`，建立服务层目录骨架
   - 创建含 HTMX CDN 引用的 `kb/templates/kb/base.html`，供三个页面模板继承
-  - 在 `learn_rag/urls.py` 中 `include('kb.urls')`；在 `kb/urls.py` 中建立空 URL 配置（`app_name = 'kb'`）
+  - 在 `rag_agent/urls.py` 中 `include('kb.urls')`；在 `kb/urls.py` 中建立空 URL 配置（`app_name = 'kb'`）
   - 前置条件说明：本地需已安装 PostgreSQL 15+ 且 pgvector 扩展可用（`CREATE EXTENSION vector` 不报错）
   - 验证：`pip install -r requirements.txt` 成功；`python manage.py check` 无错误输出
   - _Requirements: 1.1_

@@ -114,3 +114,88 @@
 - sentence-transformers all-MiniLM-L6-v2: https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 - PyMuPDF 文档: https://pymupdf.readthedocs.io/
 - pgvector Django 示例（官方）: pgvector-python/examples/django_example/
+
+---
+
+# ギャップ分析：REST API + 原本ファイル保存（要件 8〜11）
+
+> 2026-06-18 追記。既存の検索層（要件 1〜7）は実装・テスト済み。本節は新規追加スコープ（JSON API と原本 PDF 保存・閲覧リンク）のみを対象とする。
+
+## 1. 現状調査（既存資産）
+
+| 資産 | 場所 | 新スコープでの再利用性 |
+|------|------|------------------------|
+| `searcher.search(vector, top_k=5)` | `knowledge_base/services/searcher.py` | **そのまま再利用可**。`select_related('document')` 済みなので、各 Chunk から `chunk.document.filename` を追加クエリなしで取得できる（要件 8） |
+| `embedder.embed_one(text)` | `knowledge_base/services/embedder.py` | **そのまま再利用可**（要件 8 のクエリ埋め込み） |
+| `Document` モデル | `knowledge_base/models.py:10` | `filename / uploaded_at / status / error_message / chunk_count` を保持。**原本ファイルのフィールドは無し** → 要件 11 で拡張が必要 |
+| `UploadView.post()` | `knowledge_base/views.py:28` | `file.read()` でバイト列を取得後、**原本ファイルを破棄**している。要件 11 で保存処理の追加が必要（唯一の ingestion 経路なので拡張は不可避） |
+| `get_object_or_404(Document, pk=pk)` | `knowledge_base/views.py:130` | 詳細取得パターンを API 版（要件 10）でも踏襲できる |
+| URL 設定 | `knowledge_base/urls.py`（`app_name='knowledge_base'`、ルートにマウント） | 新規 API ルートを追加する余地あり |
+| 設定 | `config/settings.py` | `STATIC_URL` のみ。**`MEDIA_URL` / `MEDIA_ROOT` 未設定** → 要件 11 のファイル保存で追加が必要 |
+| 依存 | `requirements.txt` | Django / pgvector / PyMuPDF / sentence-transformers のみ。**DRF 無し** → API は組み込み `JsonResponse` で実装するのが既存方針に整合 |
+
+## 2. 要件 → 資産マッピング（ギャップタグ：再利用 / 不足 / 制約）
+
+### 要件 8：セマンティック検索 API
+- ✅ **再利用**：`embedder.embed_one` + `searcher.search`（検索ロジックは完全に既存）
+- 🔴 **不足**：JSON エンドポイント（ビュー）、Chunk → `{content, filename, ファイルリンク}` のシリアライズ
+- 🔗 **依存**：レスポンス内の「原本リンク」は要件 11 の成果物に依存
+
+### 要件 9：ドキュメント一覧 API
+- ✅ **再利用**：`Document.objects.all()`（Meta で `-uploaded_at` 順）
+- 🔴 **不足**：JSON ビュー + 各 Document のシリアライズ（id / filename / status / chunk_count / リンク）
+
+### 要件 10：ドキュメント詳細 API
+- ✅ **再利用**：`get_object_or_404` パターン
+- 🔴 **不足**：JSON ビュー、存在しない pk に対する **JSON 形式の 404**（既存の HTML 404 とは別経路）
+
+### 要件 11：原本ファイル保存・閲覧
+- 🔴 **不足（モデル）**：`Document` に `FileField`（例：`file`）追加 → **マイグレーション必要**
+- 🔴 **不足（設定）**：`MEDIA_URL` / `MEDIA_ROOT`
+- 🔴 **不足（保存処理）**：`UploadView` で原本を保存
+- ⚠️ **制約（読み取り順序）**：現在 `file.read()` で 1 回読み切っている。`FileField` 保存と抽出用バイト取得が競合する。アップロードファイルは 1 回しか読めない（`InMemoryUploadedFile` / `TemporaryUploadedFile`）ため、**保存 → 再オープン**、または **`read()` 後に `seek(0)`** のいずれかが必要 → 設計で確定（Research Needed）
+- 🔴 **不足（配信）**：「安定した閲覧リンク」の提供方式（MEDIA 直配信 or 専用ダウンロードビュー）
+- 🔗 **波及**：要件 5.5（詳細ページにリンク表示）= `document_detail.html` テンプレート拡張
+
+## 3. 実装アプローチの選択肢
+
+新規スコープは性質の異なる 2 種に分かれる：**(A) 原本ファイル保存**（既存モデル/アップロード経路の拡張が不可避）と **(B) JSON API 層**（新規が自然）。
+
+### Option A：既存 views.py に API を相乗り
+- HTML ビューと JSON ビューを同一ファイル/同一ビューに混在
+- ❌ HTML と JSON の責務が混ざり、`render` 経路と `JsonResponse` 経路が交錯。可読性低下
+
+### Option B：API を独立モジュール化（推奨の片翼）
+- `knowledge_base/api_views.py`（または `views/api.py`）+ シリアライズ補助関数を新設、`urls.py` に `/api/...` を追加
+- ✅ HTML（HTMX）層と JSON 層をクリーンに分離。テストも独立
+- ❌ ファイル数増
+
+### Option C：ハイブリッド（推奨）
+- **保存（要件 11 の永続化）**：`Document` モデル + `UploadView` を**拡張**（唯一の ingestion 経路のため選択肢なし）+ `settings` に MEDIA 追加
+- **API（要件 8/9/10）**：**新規モジュール**（Option B）として追加
+- **配信（要件 11 のリンク）**：MEDIA 直配信 or 専用 `FileResponse` ビュー（設計で確定）
+- ✅ 各責務が最も自然な場所に収まる。既存の検索層・HTMX 層は無改変
+
+## 4. 工数・リスク
+
+| 項目 | 工数 | リスク | 根拠 |
+|------|------|--------|------|
+| JSON API 層（要件 8/9/10） | **S** | **Low** | 検索ロジックは既存再利用、`JsonResponse` のみ。シリアライズは単純 |
+| 原本ファイル保存（要件 11 保存） | **S〜M** | **Low〜Medium** | `FileField` + マイグレーション + MEDIA 設定は定型。ただし**ファイル読み取り順序**の落とし穴あり |
+| ファイル配信・リンク（要件 11 配信 + 要件 5.5） | **S** | **Low** | dev は MEDIA 配信、堅めにするなら `FileResponse` ビュー。`document_detail.html` 微修正 |
+
+総合：**S〜M / Low〜Medium**。アーキテクチャ変更なし、既存パターンの延長。
+
+## 5. 設計フェーズへの申し送り（Research Needed）
+
+1. **アップロード時のファイル読み取り順序**：`FileField` 保存と抽出用 `read()` の競合。保存 → `doc.file.open()` で再読込 する案が有力。`InMemoryUploadedFile` / `TemporaryUploadedFile` 双方で検証
+2. **ファイル配信方式**：MEDIA 直配信（`django.views.static.serve` / 開発時）vs 専用 `FileResponse` ダウンロードビュー。「安定リンク」（要件 11.4）の URL 形を決める
+3. **リンクの絶対 URL 化**：API 消費者（TS Agent / ブラウザ）が直接開けるよう、`request.build_absolute_uri()` で絶対 URL を返すか、相対パスを返すか
+4. **API の URL 構造**：`/api/search/`（POST）、`/api/documents/`（GET）、`/api/documents/<id>/`（GET）、原本配信 `/api/documents/<id>/file/`（or MEDIA URL 直結）。typescript-agent spec の Tool 契約と一致させること
+5. **CORS / リクエスト形式**：TS Agent が別オリジン（Bun）から呼ぶ場合の CORS、POST ボディ形式（JSON vs form）。設計で方針決定
+
+## 6. 推奨
+
+- **アプローチ**：Option C（ハイブリッド）— 保存は既存拡張、API は新規モジュール
+- **DRF は導入しない**：組み込み `JsonResponse` で十分、既存方針に整合
+- **要件 11 を最初に実装**：API（要件 8/10）のリンク項目が依存するため、原本保存・リンク基盤を先に確定させると手戻りが少ない

@@ -1,5 +1,5 @@
-django
-pgvector
-PyMuPDF
-sentence-transformers
-psycopg2-binary
+django==6.0.6
+pgvector==0.4.2
+PyMuPDF==1.27.2.3
+sentence-transformers==5.5.1
+psycopg2-binary==2.9.12

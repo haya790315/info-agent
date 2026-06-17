@@ -110,7 +110,7 @@ graph TB
 manage.py
 requirements.txt
 
-learn_rag/                        # Django 项目配置
+rag_agent/                        # Django 项目配置
 ├── settings.py
 └── urls.py
 
