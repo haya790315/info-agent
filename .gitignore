@@ -219,3 +219,7 @@ __marimo__/
 
 # Django media (uploaded original PDFs — local storage)
 media/
+
+# Bun / TypeScript agent
+agent/.env
+agent/node_modules/

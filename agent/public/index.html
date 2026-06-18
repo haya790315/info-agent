@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF ナレッジベース エージェント</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 16px; }
+      h1 { font-size: 1.2rem; }
+      #messages { border: 1px solid #ddd; border-radius: 8px; padding: 12px; min-height: 320px; margin-bottom: 12px; }
+      .msg { margin: 8px 0; padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+      .user { background: #e8f0fe; }
+      .agent { background: #f3f3f3; }
+      .status { color: #888; font-style: italic; }
+      form { display: flex; gap: 8px; }
+      #q { flex: 1; padding: 8px; }
+      button { padding: 8px 16px; }
+      a { color: #1a73e8; }
+    </style>
+  </head>
+  <body>
+    <h1>PDF ナレッジベース エージェント</h1>
+    <div id="messages"></div>
+    <form id="chat-form">
+      <input id="q" type="text" placeholder="質問を入力してください" autocomplete="off" />
+      <button type="submit">送信</button>
+    </form>
+
+    <script>
+      // 会話セッションIDをページ存続中だけ保持する（多輪）
+      let sessionId = null;
+      const messages = document.getElementById("messages");
+      const form = document.getElementById("chat-form");
+      const input = document.getElementById("q");
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // URL をクリック可能なリンクに変換する（出典リンク用）
+      function linkify(text) {
+        const escaped = escapeHtml(text);
+        return escaped.replace(/(https?:\/\/[^\s）)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      }
+
+      function addMessage(text, cls, asHtml) {
+        const div = document.createElement("div");
+        div.className = "msg " + cls;
+        if (asHtml) div.innerHTML = linkify(text);
+        else div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const question = input.value.trim();
+        if (!question) return;
+        input.value = "";
+        addMessage(question, "user", false);
+        // 処理中インジケータ
+        const status = addMessage("処理中…", "status", false);
+
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: question, sessionId }),
+          });
+          const data = await res.json();
+          status.remove();
+          if (!res.ok) {
+            addMessage(data.error || "エラーが発生しました。", "agent", false);
+            return;
+          }
+          sessionId = data.sessionId;
+          addMessage(data.answer, "agent", true);
+        } catch (err) {
+          status.remove();
+          addMessage("通信エラーが発生しました。", "agent", false);
+        }
+      });
+    </script>
+  </body>
+</html>
