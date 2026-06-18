@@ -2,12 +2,21 @@
 EmbedderService: SentenceTransformer を使ったテキスト埋め込みサービス
 
 モジュールレベルでシングルトンモデルを保持し、
-リクエストごとに約 90MB のモデル重みを再ロードしないようにする。
+リクエストごとにモデル重みを再ロードしないようにする。
+
+多言語モデル paraphrase-multilingual-MiniLM-L12-v2 を使用する。
+日本語クエリで英語文書を、英語クエリで日本語文書を横断検索できる
 """
+
+import os
+
 from sentence_transformers import SentenceTransformer
 
+# 環境変数で上書き可能（既定は多言語 384 次元モデル）
+_MODEL_NAME = os.environ.get("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+
 # モジュールレベルシングルトン — 最初のインポート時に一度だけロードする
-_model = SentenceTransformer("all-MiniLM-L6-v2")
+_model = SentenceTransformer(_MODEL_NAME)
 
 
 def embed_many(texts: list[str]) -> list[list[float]]:
