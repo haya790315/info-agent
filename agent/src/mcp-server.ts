@@ -57,7 +57,7 @@ export function buildMcpServer(registry: ErasedToolDefinition[]): McpServer {
 if (import.meta.main) {
   const config = loadConfig();
   const kb = createKbClient(config.kbApiBaseUrl);
-  const registry = createToolRegistry(kb);
+  const registry = createToolRegistry(kb, config.searchMaxDistance);
   const server = buildMcpServer(registry);
   const transport = new StdioServerTransport();
   await server.connect(transport);

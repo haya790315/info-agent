@@ -62,7 +62,7 @@ export function createApp(
 function buildAgent(): AgentService {
   const config = loadConfig();
   const kb = createKbClient(config.kbApiBaseUrl);
-  const registry = createToolRegistry(kb);
+  const registry = createToolRegistry(kb, config.searchMaxDistance);
   const llm = createLLMClient(config);
   const session = createSessionStore();
   return createAgentLoop({ llm, registry, session });

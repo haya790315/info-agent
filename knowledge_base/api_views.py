@@ -42,13 +42,26 @@ def _document_dict(doc, request):
     }
 
 
-def _chunk_dict(chunk, request):
+def _cosine_distance(query_vec, chunk_emb) -> float:
+    """正規化済みベクトル同士のコサイン距離（= 1 - 内積）。0=完全一致, 2=逆方向。
+
+    埋め込みは embedder 側で normalize_embeddings=True 済みのため、
+    内積がそのままコサイン類似度になる。クライアントが関連度で
+    フィルタできるよう、検索結果ごとにこの距離を返す。
+    """
+    dot = sum(float(a) * float(b) for a, b in zip(query_vec, chunk_emb))
+    return round(1.0 - dot, 4)
+
+
+def _chunk_dict(chunk, request, distance=None):
     """Chunk → JSON dict 変換（searcher が select_related 済みの document を再利用）"""
     return {
         "content": chunk.content,
         "filename": chunk.document.filename,
         "document_id": chunk.document_id,
         "file_url": _file_url(chunk.document, request),
+        # コサイン距離（関連度の指標、小さいほど関連）。クライアントが閾値フィルタに使う
+        "distance": distance,
     }
 
 
@@ -104,7 +117,13 @@ class SearchAPIView(View):
         # 検証通過 → クエリをベクトル化して類似チャンクを検索（top_k=5）
         vector = embedder.embed_one(form.cleaned_data["query"])
         chunks = searcher.search(vector, top_k=5)
+        # 各チャンクのコサイン距離を付与（クライアントが関連度フィルタに使用）
         # Chunk テーブルが空の場合は results=[]（200、エラーではない）
         return JsonResponse(
-            {"results": [_chunk_dict(c, request) for c in chunks]}
+            {
+                "results": [
+                    _chunk_dict(c, request, _cosine_distance(vector, list(c.embedding)))
+                    for c in chunks
+                ]
+            }
         )

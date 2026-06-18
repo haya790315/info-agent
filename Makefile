@@ -43,13 +43,13 @@ agent-install:
 agent:
 	cd $(AGENT_DIR) && bun run dev
 
-# バックエンド（Django :8000）とエージェント（Bun :3000）を同時起動する。
+# バックエンド（Django :8080）とエージェント（Bun :3000）を同時起動する。
 # Ctrl-C で両方をまとめて停止する（trap 'kill 0' でプロセスグループを終了）。
 # 事前に `make db` でDBを起動し、agent/.env に OPENAI_API_KEY を設定しておくこと。
 dev-all:
-	@echo "起動中: バックエンド Django (http://localhost:8000) + エージェント Bun (http://localhost:3000)"
+	@echo "起動中: バックエンド (8080) とエージェント (3000)"
 	@trap 'kill 0' INT TERM EXIT; \
-		DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver & \
+		DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver 8080 & \
 		(cd $(AGENT_DIR) && bun run dev) & \
 		wait
 

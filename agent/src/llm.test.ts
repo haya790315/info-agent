@@ -11,6 +11,7 @@ const config: Config = {
   openaiModel: "test-model",
   openaiBaseUrl: undefined,
   kbApiBaseUrl: "http://localhost:8000",
+  searchMaxDistance: 1.0,
 };
 
 type CreateParams = Parameters<ChatCompletionPort["create"]>[0];

@@ -23,6 +23,32 @@ describe("ToolRegistry", () => {
     expect(await tool.execute({ query: "x" })).toEqual({ ok: true, data: [] });
   });
 
+  test("search_knowledge_base は maxDistance を超える結果を破棄する", async () => {
+    const items = [
+      { content: "近い", filename: "a.pdf", documentId: 1, fileUrl: null, distance: 0.3 },
+      { content: "遠い", filename: "b.pdf", documentId: 2, fileUrl: null, distance: 0.9 },
+    ];
+    const reg = createToolRegistry(fakeKb({ search: async () => items }), 0.5);
+    const tool = getTool(reg, "search_knowledge_base");
+    const result = await tool.execute({ query: "x" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as typeof items;
+      expect(data).toHaveLength(1);
+      expect(data[0]?.filename).toBe("a.pdf");
+    }
+  });
+
+  test("distance が null の結果は安全側で残す", async () => {
+    const items = [
+      { content: "x", filename: "a.pdf", documentId: 1, fileUrl: null, distance: null },
+    ];
+    const reg = createToolRegistry(fakeKb({ search: async () => items }), 0.5);
+    const tool = getTool(reg, "search_knowledge_base");
+    const result = await tool.execute({ query: "x" });
+    expect(result.ok && (result.data as typeof items).length).toBe(1);
+  });
+
   test("search_knowledge_base は引数不正で {ok:false}", async () => {
     const reg = createToolRegistry(fakeKb());
     const tool = getTool(reg, "search_knowledge_base");

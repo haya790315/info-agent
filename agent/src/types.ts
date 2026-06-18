@@ -41,6 +41,8 @@ export interface SearchResultItem {
   filename: string;
   documentId: number;
   fileUrl: string | null;
+  /** コサイン距離（小さいほど関連）。閾値フィルタに使う。未提供なら null */
+  distance: number | null;
 }
 
 export interface DocumentSummary {

@@ -46,8 +46,12 @@ async function guarded(fn: () => Promise<ToolResult>): Promise<ToolResult> {
 /**
  * 3 つのツールを定義したレジストリを生成する。
  * @param kb ナレッジベースクライアント
+ * @param maxDistance 採用するコサイン距離の上限（これより大きい結果は破棄）。既定は Infinity（フィルタ無効）
  */
-export function createToolRegistry(kb: KbClient): ErasedToolDefinition[] {
+export function createToolRegistry(
+  kb: KbClient,
+  maxDistance: number = Infinity,
+): ErasedToolDefinition[] {
   return [
     defineTool({
       name: "search_knowledge_base",
@@ -60,7 +64,15 @@ export function createToolRegistry(kb: KbClient): ErasedToolDefinition[] {
       },
       parameters: z.object({ query: z.string().min(1) }),
       run: ({ query }) =>
-        guarded(async () => ({ ok: true, data: await kb.search(query) })),
+        guarded(async () => {
+          const all = await kb.search(query);
+          // 関連度の薄い（距離が閾値を超える）結果を破棄してノイズを抑える。
+          // distance が null（未提供）の結果は安全側で残す。
+          const relevant = all.filter(
+            (r) => r.distance === null || r.distance <= maxDistance,
+          );
+          return { ok: true, data: relevant };
+        }),
     }),
 
     defineTool({

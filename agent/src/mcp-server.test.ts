@@ -22,7 +22,7 @@ describe("MCP ハンドラ一貫性", () => {
     const registry = createToolRegistry(
       fakeKb({
         search: async () => [
-          { content: "c", filename: "f.pdf", documentId: 1, fileUrl: "http://x/f.pdf" },
+          { content: "c", filename: "f.pdf", documentId: 1, fileUrl: "http://x/f.pdf", distance: 0.2 },
         ],
       }),
     );

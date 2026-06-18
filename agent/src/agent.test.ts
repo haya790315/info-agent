@@ -51,6 +51,7 @@ describe("AgentLoop", () => {
             filename: "手册.pdf",
             documentId: 1,
             fileUrl: "http://x/media/pdfs/手册.pdf",
+            distance: 0.3,
           },
         ],
       }),

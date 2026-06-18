@@ -33,6 +33,7 @@ interface RawSearchItem {
   filename: string;
   document_id: number;
   file_url: string | null;
+  distance?: number | null;
 }
 interface RawDocument {
   id: number;
@@ -50,6 +51,7 @@ function mapSearchItem(raw: RawSearchItem): SearchResultItem {
     filename: raw.filename,
     documentId: raw.document_id,
     fileUrl: raw.file_url,
+    distance: raw.distance ?? null,
   };
 }
 
