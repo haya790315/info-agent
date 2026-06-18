@@ -3,7 +3,11 @@ DB_USER ?= postgres
 DB_PASSWORD ?= postgres
 DB_HOST ?= localhost
 
-.PHONY: dev migrate test install superuser db db-stop db-reset db-logs
+# TypeScript エージェント（フロントエンド）
+AGENT_DIR ?= agent
+
+.PHONY: dev migrate test install superuser db db-stop db-reset db-logs \
+	agent-install agent dev-all
 
 db:
 	docker compose up -d
@@ -30,6 +34,24 @@ superuser:
 
 dev:
 	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver
+
+# エージェント（Bun）の依存をインストール
+agent-install:
+	cd $(AGENT_DIR) && bun install
+
+# エージェント（フロントエンド）単体を起動（http://localhost:3000）
+agent:
+	cd $(AGENT_DIR) && bun run dev
+
+# バックエンド（Django :8000）とエージェント（Bun :3000）を同時起動する。
+# Ctrl-C で両方をまとめて停止する（trap 'kill 0' でプロセスグループを終了）。
+# 事前に `make db` でDBを起動し、agent/.env に OPENAI_API_KEY を設定しておくこと。
+dev-all:
+	@echo "起動中: バックエンド Django (http://localhost:8000) + エージェント Bun (http://localhost:3000)"
+	@trap 'kill 0' INT TERM EXIT; \
+		DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver & \
+		(cd $(AGENT_DIR) && bun run dev) & \
+		wait
 
 test:
 	uv run python manage.py test knowledge_base --settings=config.test_settings
