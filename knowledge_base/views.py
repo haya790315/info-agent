@@ -35,6 +35,7 @@ class UploadView(View):
             return render(request, "kb/upload.html", {"form": form})
 
         file = form.cleaned_data["pdf_file"]
+        category = form.cleaned_data.get("category", "")
 
         # アップロードバイトは一度だけ読み取る（read-once 競合の回避）
         # 同じ bytes を「原本保存」と「テキスト抽出」の両方に使い回す
@@ -43,6 +44,7 @@ class UploadView(View):
         # ドキュメントレコードを作成
         doc = Document.objects.create(
             filename=file.name,
+            category=category,
             status=Document.STATUS_PENDING,
         )
         # ingestion より前に原本 PDF を保存する
@@ -62,8 +64,13 @@ class UploadView(View):
                 )
 
             # 分割 + 埋め込み生成
-            chunks = processor.split_into_chunks(text)
-            vectors = embedder.embed_many(chunks)
+            # カテゴリに応じた chunk_size / overlap を使用する
+            # ファイル名をチャンク内容の前に付与してベクトル化する（コンテキスト注入）
+            # DB に保存するのは元のチャンク内容（表示用）、埋め込みだけにファイル名を含める。
+            chunk_size, overlap = processor.chunk_config_for_category(category)
+            chunks = processor.split_into_chunks(text, chunk_size=chunk_size, overlap=overlap)
+            embed_texts = [f"{file.name}\n\n{c}" for c in chunks]
+            vectors = embedder.embed_many(embed_texts)
 
             # Chunk 一括保存とドキュメント更新をアトミックに実行
             with transaction.atomic():

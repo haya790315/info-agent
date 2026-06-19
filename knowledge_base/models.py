@@ -7,6 +7,12 @@ from django.db import models
 from pgvector.django import VectorField
 
 
+def _pdf_upload_path(instance, filename):
+    # カテゴリ別サブフォルダに格納する（未設定は uncategorized）
+    folder = instance.category if instance.category else "uncategorized"
+    return f"pdfs/{folder}/{filename}"
+
+
 class Document(models.Model):
     """PDFドキュメントのメタデータと処理ステータスを管理するモデル"""
 
@@ -23,10 +29,34 @@ class Document(models.Model):
         (STATUS_FAILED,     '処理失敗'),
     ]
 
+    # ドキュメント種別（エージェントが category フィルタで絞り込むために使用）
+    CATEGORY_RESUME    = 'resume'
+    CATEGORY_MANUAL    = 'manual'
+    CATEGORY_POLICY    = 'policy'
+    CATEGORY_TECHNICAL = 'technical'
+    CATEGORY_REPORT    = 'report'
+    CATEGORY_OTHER     = 'other'
+
+    CATEGORY_CHOICES = [
+        (CATEGORY_RESUME,    '職歴書・履歴書'),
+        (CATEGORY_MANUAL,    'マニュアル・操作手順'),
+        (CATEGORY_POLICY,    '規程・ポリシー'),
+        (CATEGORY_TECHNICAL, '技術資料'),
+        (CATEGORY_REPORT,    'レポート・報告書'),
+        (CATEGORY_OTHER,     'その他'),
+    ]
+
     filename      = models.CharField(max_length=255)
-    # アップロードされた原本 PDF（ローカルの MEDIA_ROOT/pdfs/ に保存）
+    # ドキュメント種別（未設定=空文字、エージェントの絞り込み検索に使用）
+    category      = models.CharField(
+        max_length=64,
+        choices=CATEGORY_CHOICES,
+        blank=True,
+        default='',
+    )
+    # アップロードされた原本 PDF（MEDIA_ROOT/pdfs/<category>/ に保存）
     # blank/null 許可：既存行や原本未保存のケースでも破綻しないようにする
-    file          = models.FileField(upload_to='pdfs/', blank=True, null=True)
+    file          = models.FileField(upload_to=_pdf_upload_path, blank=True, null=True)
     uploaded_at   = models.DateTimeField(auto_now_add=True)
     status        = models.CharField(
         max_length=20,

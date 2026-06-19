@@ -56,16 +56,27 @@ export function createToolRegistry(
     defineTool({
       name: "search_knowledge_base",
       description:
-        "ナレッジベースを意味検索し、関連する文書チャンクの【本文】を返す。文書の内容に関する質問（「XXXとは」「XXXの方法」「XXXについて教えて」など）には必ずこれを使う。",
+        "ナレッジベースを意味検索し、関連する文書チャンクの【本文】を返す。文書の内容に関する質問（「XXXとは」「XXXの方法」「XXXについて教えて」など）には必ずこれを使う。" +
+        "特定の種別（職歴書・マニュアルなど）に絞りたいときは category を指定する。" +
+        "指定できる category 値: resume（職歴書・履歴書）, manual（マニュアル・操作手順）, policy（規程・ポリシー）, technical（技術資料）, report（レポート・報告書）, other（その他）。省略時は全種別を横断検索する。",
       jsonSchema: {
         type: "object",
-        properties: { query: { type: "string", description: "検索クエリ" } },
+        properties: {
+          query:    { type: "string", description: "検索クエリ" },
+          category: {
+            type: "string",
+            description: "ドキュメント種別フィルタ（省略可）: resume / manual / policy / technical / report / other",
+          },
+        },
         required: ["query"],
       },
-      parameters: z.object({ query: z.string().min(1) }),
-      run: ({ query }) =>
+      parameters: z.object({
+        query:    z.string().min(1),
+        category: z.string().optional(),
+      }),
+      run: ({ query, category }) =>
         guarded(async () => {
-          const all = await kb.search(query);
+          const all = await kb.search(query, category);
           // 関連度の薄い（距離が閾値を超える）結果を破棄してノイズを抑える。
           // distance が null（未提供）の結果は安全側で残す。
           const relevant = all.filter(

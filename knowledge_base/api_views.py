@@ -34,6 +34,7 @@ def _document_dict(doc, request):
     return {
         "id": doc.id,
         "filename": doc.filename,
+        "category": doc.category,
         "status": doc.status,
         "chunk_count": doc.chunk_count,
         "uploaded_at": doc.uploaded_at.isoformat(),
@@ -58,6 +59,7 @@ def _chunk_dict(chunk, request, distance=None):
     return {
         "content": chunk.content,
         "filename": chunk.document.filename,
+        "category": chunk.document.category,
         "document_id": chunk.document_id,
         "file_url": _file_url(chunk.document, request),
         # コサイン距離（関連度の指標、小さいほど関連）。クライアントが閾値フィルタに使う
@@ -104,7 +106,8 @@ class SearchAPIView(View):
             payload = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
             payload = {}
-        query = payload.get("query", "") if isinstance(payload, dict) else ""
+        query    = payload.get("query", "")    if isinstance(payload, dict) else ""
+        category = payload.get("category", "") if isinstance(payload, dict) else ""
 
         # 既存の SearchForm の検証ロジックを再利用（空クエリは無効）
         form = SearchForm({"query": query})
@@ -115,8 +118,9 @@ class SearchAPIView(View):
             )
 
         # 検証通過 → クエリをベクトル化して類似チャンクを検索（top_k=5）
+        # category が空文字のときはフィルタなし（全種別対象）
         vector = embedder.embed_one(form.cleaned_data["query"])
-        chunks = searcher.search(vector, top_k=5)
+        chunks = searcher.search(vector, top_k=5, category=category or None)
         # 各チャンクのコサイン距離を付与（クライアントが関連度フィルタに使用）
         # Chunk テーブルが空の場合は results=[]（200、エラーではない）
         return JsonResponse(

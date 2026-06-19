@@ -161,6 +161,7 @@ class UploadViewPostValidPdfTest(TestCase):
         """有効な PDF の POST は processor.extract_text を呼び出す"""
         # processor.extract_text が有効なテキストを返すようにモック
         mock_processor.extract_text.return_value = "Sample text content"
+        mock_processor.chunk_config_for_category.return_value = (700, 150)
         mock_processor.split_into_chunks.return_value = ["Sample text content"]
         mock_embedder.embed_many.return_value = [[0.1] * 384]
 
@@ -177,6 +178,7 @@ class UploadViewPostValidPdfTest(TestCase):
     def test_post_valid_pdf_calls_embed_many(self, mock_processor, mock_embedder):
         """有効な PDF の POST は embedder.embed_many を呼び出す"""
         mock_processor.extract_text.return_value = "Sample text content"
+        mock_processor.chunk_config_for_category.return_value = (700, 150)
         mock_processor.split_into_chunks.return_value = ["Sample text content"]
         mock_embedder.embed_many.return_value = [[0.1] * 384]
 
@@ -186,7 +188,8 @@ class UploadViewPostValidPdfTest(TestCase):
 
         self.client.post(self.url, {"pdf_file": pdf_file})
 
-        mock_embedder.embed_many.assert_called_once_with(["Sample text content"])
+        # ファイル名コンテキスト注入済みテキストで呼び出されること
+        mock_embedder.embed_many.assert_called_once_with(["valid.pdf\n\nSample text content"])
 
     @patch("knowledge_base.views.embedder")
     @patch("knowledge_base.views.processor")
@@ -195,6 +198,7 @@ class UploadViewPostValidPdfTest(TestCase):
     ):
         """有効な PDF の POST は /documents/{id}/ にリダイレクトする"""
         mock_processor.extract_text.return_value = "Sample text content"
+        mock_processor.chunk_config_for_category.return_value = (700, 150)
         mock_processor.split_into_chunks.return_value = ["Sample text content"]
         mock_embedder.embed_many.return_value = [[0.1] * 384]
 

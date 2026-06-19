@@ -39,6 +39,8 @@ export interface LLMToolSpec {
 export interface SearchResultItem {
   content: string;
   filename: string;
+  /** ドキュメント種別（未設定は空文字）*/
+  category: string;
   documentId: number;
   fileUrl: string | null;
   /** コサイン距離（小さいほど関連）。閾値フィルタに使う。未提供なら null */

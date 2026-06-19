@@ -5,6 +5,8 @@ PDF アップロードバリデーションを担当する
 """
 from django import forms
 
+from knowledge_base.models import Document
+
 # 最大ファイルサイズ（10MB）
 MAX_FILE_SIZE = 10_485_760  # 10MB in bytes
 
@@ -21,6 +23,12 @@ class UploadForm(forms.Form):
     pdf_file = forms.FileField(
         label="PDF ファイル",
         help_text="10MB 以下の PDF ファイルをアップロードしてください",
+    )
+    category = forms.ChoiceField(
+        label="ドキュメント種別",
+        choices=[("", "未分類")] + Document.CATEGORY_CHOICES,
+        required=False,
+        initial="",
     )
 
     def clean_pdf_file(self):

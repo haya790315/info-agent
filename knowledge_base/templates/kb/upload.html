@@ -33,6 +33,16 @@
             {% endif %}
         </div>
 
+        <div>
+            <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+            {{ form.category }}
+            {% if form.category.errors %}
+                {% for error in form.category.errors %}
+                    <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
         <button type="submit">アップロード</button>
     </form>
 {% endblock %}

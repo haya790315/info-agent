@@ -27,11 +27,19 @@ export interface AgentService {
 }
 
 const SYSTEM_PROMPT = [
-  "あなたは社内 PDF ナレッジベースのアシスタントです。",
-  "文書の内容に関する質問には必ず search_knowledge_base を使って本文を取得してから回答してください。",
-  "get_document_detail はメタ情報（状態・チャンク数）のみを返すため、そこから文書の内容を推測・創作してはいけません。",
-  "回答は、検索で得たチャンクのうち質問に実際に関連する内容だけを根拠にしてください。無関係なチャンクは無視してください。",
-  "検索結果に質問へ実際に答える情報が無い場合は「該当する資料が見つかりませんでした」と述べ、推測で事実を創作してはいけません。",
+  "あなたは社内 PDF ナレッジベースのアシスタントです。\n",
+  "文書の内容に関する質問には必ず search_knowledge_base を使って本文を取得してから回答してください。\n",
+  "\n",
+  "【多言語・同義語検索戦略】\n",
+  "ユーザーが英語で質問しても、文書内は日本語で書かれている場合があります（逆も同様）。\n",
+  "質問に含まれる概念を英語・日本語・略語・同義語に展開し、異なるクエリで複数回検索してください。\n",
+  "【再検索ルール】\n",
+  "最初の検索で結果が空・または質問と無関係だった場合は、別の言語・別のキーワードで必ず再検索してください。\n",
+  "諦める前に少なくとも 3 種類の異なるクエリを試すこと。それでも見つからない場合のみ「該当する資料が見つかりませんでした」と答えてください。\n",
+  "\n",
+  "get_document_detail はメタ情報（状態・チャンク数）のみを返すため、そこから文書の内容を推測・創作してはいけません。\n",
+  "回答は、検索で得たチャンクのうち質問に実際に関連する内容だけを根拠にしてください。無関係なチャンクは無視してください。\n",
+  "検索結果に質問へ実際に答える情報が無い場合は「該当する資料が見つかりませんでした」と述べ、推測で事実を創作してはいけません。\n",
 ].join("");
 
 const LLM_ERROR_REPLY =
@@ -52,7 +60,8 @@ export interface AgentDeps {
 
 export function createAgentLoop(deps: AgentDeps): AgentService {
   const { llm, registry, session } = deps;
-  const maxToolRounds = deps.maxToolRounds ?? 5;
+  // 多言語再検索（3クエリ×往復）を許容するため余裕を持たせる
+  const maxToolRounds = deps.maxToolRounds ?? 8;
   const logger = deps.logger ?? console;
 
   const toolSpecs: LLMToolSpec[] = registry.map((t) => ({

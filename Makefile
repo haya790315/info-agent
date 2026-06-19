@@ -7,7 +7,7 @@ DB_HOST ?= localhost
 AGENT_DIR ?= agent
 
 .PHONY: dev migrate test install superuser db db-stop db-reset db-logs \
-	agent-install agent dev-all
+	agent-install agent dev-all reembed
 
 db:
 	docker compose up -d
@@ -55,3 +55,7 @@ dev-all:
 
 test:
 	uv run python manage.py test knowledge_base --settings=config.test_settings
+
+# 既存チャンクをファイル名コンテキスト付きで再ベクトル化する（contextual embedding 導入後に一度実行）
+reembed:
+	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py reembed

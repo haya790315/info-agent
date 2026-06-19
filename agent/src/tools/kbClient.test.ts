@@ -23,6 +23,7 @@ describe("KbClient", () => {
           {
             content: "年休は10日",
             filename: "手册.pdf",
+            category: "policy",
             document_id: 3,
             file_url: "http://x/media/pdfs/手册.pdf",
             distance: 0.42,
@@ -35,6 +36,7 @@ describe("KbClient", () => {
       {
         content: "年休は10日",
         filename: "手册.pdf",
+        category: "policy",
         documentId: 3,
         fileUrl: "http://x/media/pdfs/手册.pdf",
         distance: 0.42,

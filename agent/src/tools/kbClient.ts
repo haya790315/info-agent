@@ -16,8 +16,8 @@ export class KbApiError extends Error {
 }
 
 export interface KbClient {
-  /** POST /api/search/ {query} → 関連チャンク（空なら []） */
-  search(query: string): Promise<SearchResultItem[]>;
+  /** POST /api/search/ {query, category?} → 関連チャンク（空なら []） */
+  search(query: string, category?: string): Promise<SearchResultItem[]>;
   /** GET /api/documents/ → 全ドキュメント（空なら []） */
   listDocuments(): Promise<DocumentSummary[]>;
   /** GET /api/documents/<id>/ → ドキュメント詳細（存在しなければ null） */
@@ -31,6 +31,7 @@ type FetchFn = typeof fetch;
 interface RawSearchItem {
   content: string;
   filename: string;
+  category: string;
   document_id: number;
   file_url: string | null;
   distance?: number | null;
@@ -49,6 +50,7 @@ function mapSearchItem(raw: RawSearchItem): SearchResultItem {
   return {
     content: raw.content,
     filename: raw.filename,
+    category: raw.category ?? "",
     documentId: raw.document_id,
     fileUrl: raw.file_url,
     distance: raw.distance ?? null,
@@ -76,11 +78,13 @@ export function createKbClient(baseUrl: string, fetchFn: FetchFn = fetch): KbCli
   const base = baseUrl.replace(/\/+$/, "");
 
   return {
-    async search(query: string): Promise<SearchResultItem[]> {
+    async search(query: string, category?: string): Promise<SearchResultItem[]> {
+      const body: Record<string, string> = { query };
+      if (category) body.category = category;
       const res = await fetchFn(`${base}/api/search/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         throw new KbApiError(`検索 API が失敗しました: ${res.status}`, res.status);

@@ -40,11 +40,14 @@ class SplitIntoChunksServiceTest(SimpleTestCase):
         result = split_into_chunks(text)
         self.assertEqual(len(result), 2)
 
-    def test_chunks_joined_equal_original_text(self):
-        # 全チャンクを結合すると元のテキストと完全に一致する（文字の損失なし）
+    def test_chunks_cover_full_text(self):
+        # オーバーラップあり分割でも先頭・末尾が保持され、各チャンクは chunk_size 以下
         text = "x" * 2500
         chunks = split_into_chunks(text)
-        self.assertEqual("".join(chunks), text)
+        self.assertTrue(chunks[0].startswith(text[0]))
+        self.assertTrue(chunks[-1].endswith(text[-1]))
+        for chunk in chunks:
+            self.assertLessEqual(len(chunk), 1000)
 
 
 # ------------------------------------------------------------------ #

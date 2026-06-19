@@ -49,6 +49,7 @@ describe("AgentLoop", () => {
           {
             content: "年休は10日",
             filename: "手册.pdf",
+            category: "policy",
             documentId: 1,
             fileUrl: "http://x/media/pdfs/手册.pdf",
             distance: 0.3,
