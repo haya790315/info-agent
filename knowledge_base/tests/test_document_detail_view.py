@@ -44,9 +44,9 @@ class DocumentDetailViewCompleteTest(TestCase):
         self.assertContains(response, "sample.pdf")
 
     def test_get_complete_doc_contains_status_label(self):
-        """レスポンスに「処理完成」が含まれる"""
+        """レスポンスに「処理完了」が含まれる"""
         response = self.client.get(self.url)
-        self.assertContains(response, "処理完成")
+        self.assertContains(response, "処理完了")
 
     def test_get_complete_doc_contains_chunk_count(self):
         """レスポンスに chunk_count が含まれる"""
@@ -109,9 +109,9 @@ class DocumentDetailViewPendingTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_get_pending_doc_contains_status_label(self):
-        """レスポンスに「等待処理」が含まれる"""
+        """レスポンスに「処理待ち」が含まれる"""
         response = self.client.get(self.url)
-        self.assertContains(response, "等待処理")
+        self.assertContains(response, "処理待ち")
 
 
 class DocumentDetailViewProcessingTest(TestCase):
@@ -131,6 +131,6 @@ class DocumentDetailViewProcessingTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_get_processing_doc_contains_status_label(self):
-        """レスポンスに「处理中」が含まれる"""
+        """レスポンスに「処理中」が含まれる"""
         response = self.client.get(self.url)
-        self.assertContains(response, "处理中")
+        self.assertContains(response, "処理中")

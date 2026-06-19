@@ -6,34 +6,37 @@
 {# ドキュメント詳細ページ: ファイル名・アップロード日時・処理ステータスを表示する #}
 <h1>{{ document.filename }}</h1>
 
-<dl>
-    <dt>アップロード日時</dt>
-    <dd>{{ document.uploaded_at }}</dd>
+<div class="card">
+    <dl class="detail-list">
+        <dt>アップロード日時</dt>
+        <dd>{{ document.uploaded_at }}</dd>
 
-    <dt>ステータス</dt>
-    <dd>
-        {% if document.status == "processing" %}
-            {# 処理中 #}
-            处理中
-        {% elif document.status == "complete" %}
-            {# 処理完了: チャンク数も表示する #}
-            処理完成（チャンク数: {{ document.chunk_count }}）
-        {% elif document.status == "failed" %}
-            {# 処理失敗: エラーメッセージを表示する #}
-            処理失敗
-            {% if document.error_message %}
-                <p>{{ document.error_message }}</p>
+        <dt>ステータス</dt>
+        <dd>
+            {% if document.status == "processing" %}
+                {# 処理中 #}
+                <span class="badge badge-processing">処理中</span>
+            {% elif document.status == "complete" %}
+                {# 処理完了: チャンク数も表示する #}
+                <span class="badge badge-complete">処理完了</span>
+                <small>（チャンク数: {{ document.chunk_count }}）</small>
+            {% elif document.status == "failed" %}
+                {# 処理失敗: エラーメッセージを表示する #}
+                <span class="badge badge-failed">処理失敗</span>
+                {% if document.error_message %}
+                    <p class="error">{{ document.error_message }}</p>
+                {% endif %}
+            {% else %}
+                {# pending: 処理待ち #}
+                <span class="badge badge-pending">処理待ち</span>
             {% endif %}
-        {% else %}
-            {# pending: 処理待ち #}
-            等待処理
-        {% endif %}
-    </dd>
+        </dd>
 
-    {# 原本 PDF が保存されている場合のみ、原文の閲覧リンクを表示する #}
-    {% if document.file %}
-        <dt>原本ファイル</dt>
-        <dd><a href="{{ document.file.url }}" target="_blank" rel="noopener">原文を表示</a></dd>
-    {% endif %}
-</dl>
+        {# 原本 PDF が保存されている場合のみ、原文の閲覧リンクを表示する #}
+        {% if document.file %}
+            <dt>原本ファイル</dt>
+            <dd><a href="{{ document.file.url }}" target="_blank" rel="noopener">原文を表示</a></dd>
+        {% endif %}
+    </dl>
+</div>
 {% endblock %}

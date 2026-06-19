@@ -3,6 +3,7 @@ kbアプリのURLルーティング設定
 各ビューは Task 3.x で実装される
 """
 from django.urls import path
+from django.views.generic.base import RedirectView
 
 from knowledge_base.api_views import (
     DocumentDetailAPIView,
@@ -15,6 +16,9 @@ from knowledge_base.views import DocumentDetailView, SearchView, UploadView
 app_name = 'knowledge_base'
 
 urlpatterns = [
+    # ルートパス（/）はアップロードページへリダイレクトする
+    # permanent=False（302）: 将来トップページを変更する可能性を考慮し恒久リダイレクトにはしない
+    path('', RedirectView.as_view(pattern_name='knowledge_base:upload', permanent=False), name='home'),
     # Task 3.1: PDF アップロードビュー
     path('upload/', UploadView.as_view(), name='upload'),
     # Task 3.2: ドキュメント詳細ビュー

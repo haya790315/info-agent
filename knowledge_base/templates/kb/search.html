@@ -5,17 +5,19 @@
 {% block content %}
     <h1>ドキュメント検索</h1>
 
-    {# HTMX の hx-post で送信し、#results エリアだけ差し替える #}
-    <form hx-post="{% url 'knowledge_base:search' %}" hx-target="#results">
-        {% csrf_token %}
+    <div class="card">
+        {# HTMX の hx-post で送信し、#results エリアだけ差し替える #}
+        <form class="form" hx-post="{% url 'knowledge_base:search' %}" hx-target="#results">
+            {% csrf_token %}
 
-        <div>
-            <label for="{{ form.query.id_for_label }}">{{ form.query.label }}</label>
-            {{ form.query }}
-        </div>
+            <div class="field">
+                <label for="{{ form.query.id_for_label }}">{{ form.query.label }}</label>
+                {{ form.query }}
+            </div>
 
-        <button type="submit">検索</button>
-    </form>
+            <button type="submit">検索</button>
+        </form>
+    </div>
 
     {# 検索結果コンテナ：HTMX がここだけ差し替える #}
     <div id="results">

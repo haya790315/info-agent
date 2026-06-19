@@ -94,8 +94,8 @@ class SearchEmptyDatabaseTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
-        # 「暂无可搜索的文档」メッセージが含まれること
-        self.assertIn("暂无可搜索的文档", content)
+        # 「該当するドキュメントが見つかりませんでした」メッセージが含まれること
+        self.assertIn("該当するドキュメントが見つかりませんでした", content)
 
 
 class SearchHtmxPartialTest(TestCase):

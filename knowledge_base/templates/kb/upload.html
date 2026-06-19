@@ -5,44 +5,46 @@
 {% block content %}
     <h1>PDF ファイルをアップロード</h1>
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {% if form.errors %}
-            <div class="error-messages">
-                {% for field in form %}
-                    {% for error in field.errors %}
+    <div class="card">
+        <form class="form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="error-messages">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p class="error">{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
                         <p class="error">{{ error }}</p>
                     {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <p class="error">{{ error }}</p>
-                {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="field">
+                <label for="{{ form.pdf_file.id_for_label }}">{{ form.pdf_file.label }}</label>
+                {{ form.pdf_file }}
+                {% if form.pdf_file.help_text %}
+                    <small>{{ form.pdf_file.help_text }}</small>
+                {% endif %}
+                {% if form.pdf_file.errors %}
+                    {% for error in form.pdf_file.errors %}
+                        <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
             </div>
-        {% endif %}
 
-        <div>
-            <label for="{{ form.pdf_file.id_for_label }}">{{ form.pdf_file.label }}</label>
-            {{ form.pdf_file }}
-            {% if form.pdf_file.help_text %}
-                <small>{{ form.pdf_file.help_text }}</small>
-            {% endif %}
-            {% if form.pdf_file.errors %}
-                {% for error in form.pdf_file.errors %}
-                    <p class="field-error">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
+            <div class="field">
+                <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    {% for error in form.category.errors %}
+                        <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
-        <div>
-            <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
-            {{ form.category }}
-            {% if form.category.errors %}
-                {% for error in form.category.errors %}
-                    <p class="field-error">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-
-        <button type="submit">アップロード</button>
-    </form>
+            <button type="submit">アップロード</button>
+        </form>
+    </div>
 {% endblock %}

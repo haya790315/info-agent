@@ -187,11 +187,11 @@ class SearchViewPostValidTest(TestCase):
     def test_post_valid_query_empty_results_shows_no_docs_message(
         self, mock_embedder, mock_searcher
     ):
-        """チャンクが0件の場合は「暂无可搜索的文档」メッセージを表示する"""
+        """チャンクが0件の場合は「該当するドキュメントが見つかりませんでした」メッセージを表示する"""
         mock_embedder.embed_one.return_value = [0.1] * 384
         mock_searcher.search.return_value = []
 
         response = self.client.post(self.url, {"query": "存在しないトピック"})
 
         content = response.content.decode("utf-8")
-        self.assertIn("暂无可搜索的文档", content)
+        self.assertIn("該当するドキュメントが見つかりませんでした", content)
