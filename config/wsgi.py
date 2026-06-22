@@ -1,5 +1,5 @@
 """
-rag_agentプロジェクトのWSGI設定
+info_agentプロジェクトのWSGI設定
 """
 
 import os

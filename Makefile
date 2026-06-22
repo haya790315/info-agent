@@ -1,4 +1,4 @@
-DB_NAME ?= rag_agent
+DB_NAME ?= info_agent
 DB_USER ?= postgres
 DB_PASSWORD ?= postgres
 DB_HOST ?= localhost
@@ -6,10 +6,10 @@ DB_HOST ?= localhost
 # TypeScript エージェント（フロントエンド）
 AGENT_DIR ?= agent
 
-.PHONY: dev migrate test install superuser db db-stop db-reset db-logs \
+.PHONY: dev db-migrate test install superuser db-start db-stop db-reset db-logs \
 	agent-install agent dev-all reembed
 
-db:
+db-start:
 	docker compose up -d
 	until docker compose exec db pg_isready -U $(DB_USER) -q; do sleep 1; done
 	docker compose exec db psql -U $(DB_USER) -d $(DB_NAME) -c "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -23,16 +23,16 @@ db-reset:
 db-logs:
 	docker compose logs -f db
 
+db-migrate:
+	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py migrate
+
 install:
 	uv venv && uv pip install -r requirements.txt
-
-migrate:
-	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py migrate
 
 superuser:
 	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py createsuperuser
 
-dev:
+server:
 	DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver
 
 # エージェント（Bun）の依存をインストール

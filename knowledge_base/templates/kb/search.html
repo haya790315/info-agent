@@ -1,21 +1,24 @@
 {% extends "kb/base.html" %}
 
-{% block title %}セマンティック検索 - PDF ナレッジベース{% endblock %}
+{% block title %}検索 — Knowledge Base{% endblock %}
 
 {% block content %}
-    <h1>ドキュメント検索</h1>
+    <div class="page-header">
+        <h1>ドキュメントを検索</h1>
+        <p>質問やキーワードを入力すると、意味的に近い内容をベクトル検索で見つけます。</p>
+    </div>
 
     <div class="card">
         {# HTMX の hx-post で送信し、#results エリアだけ差し替える #}
-        <form class="form" hx-post="{% url 'knowledge_base:search' %}" hx-target="#results">
+        <form class="form" hx-post="{% url 'knowledge_base:search' %}" hx-target="#results" hx-indicator="#search-spinner">
             {% csrf_token %}
-
-            <div class="field">
+            <div class="field" style="margin-bottom:0;">
                 <label for="{{ form.query.id_for_label }}">{{ form.query.label }}</label>
-                {{ form.query }}
+                <div style="display:flex;gap:.75rem;align-items:flex-end;margin-top:.5rem;">
+                    {{ form.query }}
+                    <button type="submit" style="flex-shrink:0;white-space:nowrap;">検索</button>
+                </div>
             </div>
-
-            <button type="submit">検索</button>
         </form>
     </div>
 

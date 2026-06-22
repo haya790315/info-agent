@@ -1,9 +1,12 @@
 {% extends "kb/base.html" %}
 
-{% block title %}PDF アップロード - PDF ナレッジベース{% endblock %}
+{% block title %}PDF アップロード — Knowledge Base{% endblock %}
 
 {% block content %}
-    <h1>PDF ファイルをアップロード</h1>
+    <div class="page-header">
+        <h1>PDF をアップロード</h1>
+        <p>PDF ファイルをアップロードすると、自動的にテキストを抽出してベクトル検索に使えるようになります。</p>
+    </div>
 
     <div class="card">
         <form class="form" method="post" enctype="multipart/form-data">
@@ -22,17 +25,41 @@
             {% endif %}
 
             <div class="field">
-                <label for="{{ form.pdf_file.id_for_label }}">{{ form.pdf_file.label }}</label>
-                {{ form.pdf_file }}
-                {% if form.pdf_file.help_text %}
-                    <small>{{ form.pdf_file.help_text }}</small>
-                {% endif %}
+                <label>{{ form.pdf_file.label }}</label>
+                <div class="file-drop-zone" id="drop-zone" style="position:relative;" onclick="document.getElementById('file-input').click()">
+                    <span class="upload-icon">📄</span>
+                    <span class="upload-label" id="file-label">クリックしてファイルを選択</span>
+                    <span class="upload-hint">PDF ファイル（最大 10MB）</span>
+                    {# input を非表示にして drop-zone のクリックで発火させる #}
+                    <div style="display:none;">{{ form.pdf_file }}</div>
+                </div>
                 {% if form.pdf_file.errors %}
                     {% for error in form.pdf_file.errors %}
                         <p class="field-error">{{ error }}</p>
                     {% endfor %}
                 {% endif %}
             </div>
+
+            {% block extra_scripts %}
+            <script>
+                // drop-zone の input に id を付けて参照できるようにする
+                const rawInput = document.querySelector('.form input[type="file"]');
+                if (rawInput) {
+                    rawInput.id = 'file-input';
+                    rawInput.addEventListener('change', function() {
+                        const label = document.getElementById('file-label');
+                        const icon  = document.querySelector('.upload-icon');
+                        if (this.files && this.files[0]) {
+                            label.textContent = this.files[0].name;
+                            icon.textContent  = '✅';
+                        } else {
+                            label.textContent = 'クリックしてファイルを選択';
+                            icon.textContent  = '📄';
+                        }
+                    });
+                }
+            </script>
+            {% endblock %}
 
             <div class="field">
                 <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
@@ -44,7 +71,7 @@
                 {% endif %}
             </div>
 
-            <button type="submit">アップロード</button>
+            <button type="submit">アップロード →</button>
         </form>
     </div>
 {% endblock %}

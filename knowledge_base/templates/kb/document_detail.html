@@ -1,42 +1,51 @@
 {% extends "kb/base.html" %}
 
-{% block title %}{{ document.filename }} — PDFナレッジベース{% endblock %}
+{% block title %}{{ document.filename }} — Knowledge Base{% endblock %}
 
 {% block content %}
 {# ドキュメント詳細ページ: ファイル名・アップロード日時・処理ステータスを表示する #}
-<h1>{{ document.filename }}</h1>
+<div class="page-header">
+    <h1>{{ document.filename }}</h1>
+    <p>アップロード済みドキュメントの詳細情報</p>
+</div>
 
 <div class="card">
     <dl class="detail-list">
-        <dt>アップロード日時</dt>
-        <dd>{{ document.uploaded_at }}</dd>
-
-        <dt>ステータス</dt>
-        <dd>
-            {% if document.status == "processing" %}
-                {# 処理中 #}
-                <span class="badge badge-processing">処理中</span>
-            {% elif document.status == "complete" %}
-                {# 処理完了: チャンク数も表示する #}
-                <span class="badge badge-complete">処理完了</span>
-                <small>（チャンク数: {{ document.chunk_count }}）</small>
-            {% elif document.status == "failed" %}
-                {# 処理失敗: エラーメッセージを表示する #}
-                <span class="badge badge-failed">処理失敗</span>
-                {% if document.error_message %}
-                    <p class="error">{{ document.error_message }}</p>
+        <div class="detail-row">
+            <dt>ステータス</dt>
+            <dd>
+                {% if document.status == "processing" %}
+                    <span class="badge badge-processing"><span class="badge-dot"></span>処理中</span>
+                {% elif document.status == "complete" %}
+                    <span class="badge badge-complete"><span class="badge-dot"></span>処理完了</span>
+                    <span style="margin-left:.5rem;font-size:.85rem;color:var(--text-muted);">{{ document.chunk_count }} チャンク</span>
+                {% elif document.status == "failed" %}
+                    <span class="badge badge-failed"><span class="badge-dot"></span>処理失敗</span>
+                    {% if document.error_message %}
+                        <p class="error" style="margin-top:.5rem;">{{ document.error_message }}</p>
+                    {% endif %}
+                {% else %}
+                    <span class="badge badge-pending"><span class="badge-dot"></span>処理待ち</span>
                 {% endif %}
-            {% else %}
-                {# pending: 処理待ち #}
-                <span class="badge badge-pending">処理待ち</span>
-            {% endif %}
-        </dd>
+            </dd>
+        </div>
 
-        {# 原本 PDF が保存されている場合のみ、原文の閲覧リンクを表示する #}
+        <div class="detail-row">
+            <dt>アップロード日時</dt>
+            <dd>{{ document.uploaded_at }}</dd>
+        </div>
+
         {% if document.file %}
+        <div class="detail-row">
             <dt>原本ファイル</dt>
-            <dd><a href="{{ document.file.url }}" target="_blank" rel="noopener">原文を表示</a></dd>
+            <dd><a href="{{ document.file.url }}" target="_blank" rel="noopener">原文を表示 ↗</a></dd>
+        </div>
         {% endif %}
     </dl>
+</div>
+
+<div class="actions">
+    <a href="{% url 'knowledge_base:upload' %}" class="btn">+ さらにアップロード</a>
+    <a href="{% url 'knowledge_base:search' %}" class="btn btn-outline">検索する</a>
 </div>
 {% endblock %}

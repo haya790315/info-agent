@@ -55,7 +55,8 @@ export function buildMcpServer(registry: ErasedToolDefinition[]): McpServer {
 
 // 直接実行時のみ stdio で起動する
 if (import.meta.main) {
-  const config = loadConfig();
+  // MCP サーバーは OpenAI を使わないため OPENAI_API_KEY チェックをスキップする
+  const config = loadConfig(process.env, { requireOpenAI: false });
   const kb = createKbClient(config.kbApiBaseUrl);
   const registry = createToolRegistry(kb, config.searchMaxDistance);
   const server = buildMcpServer(registry);

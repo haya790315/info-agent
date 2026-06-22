@@ -1,5 +1,5 @@
 """
-rag_agentプロジェクトのURLルーティング設定
+info_agentプロジェクトのURLルーティング設定
 """
 
 from django.conf import settings

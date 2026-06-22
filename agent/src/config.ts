@@ -25,15 +25,19 @@ type EnvSource = Record<string, string | undefined>;
 
 /**
  * 環境変数から設定を構築する。
- * 前提条件: OPENAI_API_KEY と KB_API_BASE_URL が設定されていること
+ * 前提条件: KB_API_BASE_URL が設定されていること。requireOpenAI=true（既定）の場合は OPENAI_API_KEY も必須。
  * 事後条件: 検証済みの Config を返す。欠落時は Error を投げる
  */
-export function loadConfig(env: EnvSource = process.env): Config {
+export function loadConfig(
+  env: EnvSource = process.env,
+  opts: { requireOpenAI?: boolean } = {},
+): Config {
+  const { requireOpenAI = true } = opts;
   const openaiApiKey = env.OPENAI_API_KEY?.trim();
   const kbApiBaseUrl = env.KB_API_BASE_URL?.trim();
 
   const missing: string[] = [];
-  if (!openaiApiKey) missing.push("OPENAI_API_KEY");
+  if (requireOpenAI && !openaiApiKey) missing.push("OPENAI_API_KEY");
   if (!kbApiBaseUrl) missing.push("KB_API_BASE_URL");
   if (missing.length > 0) {
     throw new Error(

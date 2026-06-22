@@ -1,8 +1,9 @@
 services:
   db:
     image: pgvector/pgvector:pg17
+    container_name: info-agent-db
     environment:
-      POSTGRES_DB: rag_agent
+      POSTGRES_DB: info_agent
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:

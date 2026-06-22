@@ -1,5 +1,5 @@
 """
-rag_agentプロジェクトのDjango設定ファイル
+info_agentプロジェクトのDjango設定ファイル
 """
 
 import os
@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "knowledge_base",  # PDFナレッジベースアプリ
+    "knowledge_base",  # ナレッジベースアプリ
 ]
 
 MIDDLEWARE = [
@@ -63,7 +63,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "rag_agent"),
+        "NAME": os.environ.get("DB_NAME", "info_agent"),
         "USER": os.environ.get("DB_USER", "postgres"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "postgres"),
         "HOST": os.environ.get("DB_HOST", "localhost"),

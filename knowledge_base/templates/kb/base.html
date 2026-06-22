@@ -3,223 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}PDFナレッジベース{% endblock %}</title>
+    <title>{% block title %}ナレッジベース{% endblock %}</title>
     <!-- HTMX CDN: 検索結果の部分更新に使用（ページ全体リロード不要） -->
     <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
     <style>
-        /* ===== デザイントークン（配色・余白・角丸を一元管理） ===== */
+        /* ===== デザイントークン ===== */
         :root {
-            --bg: #f4f5f7;
-            --surface: #ffffff;
-            --border: #e2e5ea;
-            --text: #1f2430;
-            --text-muted: #6b7280;
-            --accent: #4f46e5;       /* インディゴ系のアクセント */
-            --accent-hover: #4338ca;
-            --accent-soft: #eef2ff;
-            --danger: #dc2626;
-            --danger-soft: #fef2f2;
-            --success: #16a34a;
-            --warning: #d97706;
-            --radius: 10px;
-            --radius-sm: 6px;
-            --shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
-            --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.08);
+            --bg:           #f8fafc;
+            --surface:      #ffffff;
+            --surface-2:    #f1f5f9;
+            --border:       #e2e8f0;
+            --border-focus: #818cf8;
+            --text:         #0f172a;
+            --text-2:       #334155;
+            --text-muted:   #94a3b8;
+            --accent:       #6366f1;
+            --accent-dark:  #4f46e5;
+            --accent-light: #eef2ff;
+            --success:      #10b981;
+            --success-bg:   #ecfdf5;
+            --warning:      #f59e0b;
+            --warning-bg:   #fffbeb;
+            --danger:       #ef4444;
+            --danger-bg:    #fef2f2;
+            --r:   12px;
+            --r-s:  8px;
+            --r-xs: 6px;
+            --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+            --shadow-sm: 0 1px 3px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.04);
+            --shadow:    0 4px 12px rgba(15,23,42,.07), 0 1px 3px rgba(15,23,42,.04);
+            --shadow-lg: 0 20px 40px rgba(15,23,42,.09), 0 4px 12px rgba(15,23,42,.05);
         }
 
-        * { box-sizing: border-box; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-            margin: 0;
             background: var(--bg);
             color: var(--text);
-            line-height: 1.65;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
         }
 
-        /* ===== ナビゲーションバー ===== */
+        /* ===== ヘッダー ===== */
         .site-header {
-            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            box-shadow: var(--shadow);
         }
         nav {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            max-width: 920px;
+            gap: 0.25rem;
+            max-width: 960px;
             margin: 0 auto;
-            padding: 0.9rem 2rem;
+            padding: 0 2rem;
+            height: 60px;
         }
-        nav .brand {
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: var(--text);
+        .brand {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-right: auto;
-        }
-        nav .brand .logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 1.9rem;
-            height: 1.9rem;
-            border-radius: var(--radius-sm);
-            background: var(--accent);
-            color: #fff;
-            font-size: 0.85rem;
+            gap: 0.6rem;
             font-weight: 700;
-        }
-        nav a.nav-link {
+            font-size: 1rem;
+            color: var(--text);
             text-decoration: none;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            font-weight: 500;
-            padding: 0.4rem 0.85rem;
-            border-radius: var(--radius-sm);
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-        nav a.nav-link:hover {
-            color: var(--accent);
-            background: var(--accent-soft);
-        }
-
-        /* ===== メインコンテナ ===== */
-        main {
-            max-width: 920px;
-            margin: 2.5rem auto;
-            padding: 0 2rem;
-        }
-
-        h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin: 0 0 1.5rem;
+            margin-right: auto;
             letter-spacing: -0.01em;
         }
+        .brand-icon {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-s);
+            background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            box-shadow: 0 2px 8px rgba(99,102,241,.35);
+        }
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--r-s);
+            transition: color .15s, background .15s;
+        }
+        .nav-link:hover {
+            color: var(--accent);
+            background: var(--accent-light);
+        }
 
-        /* ===== カード（フォームや結果を載せる白い面） ===== */
+        /* ===== ページレイアウト ===== */
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+
+        /* ===== ページヘッダー ===== */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .page-header p {
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* h1 が直接 main に書かれている場合の後方互換 */
+        main > h1:first-child {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 1.75rem;
+        }
+
+        /* ===== カード ===== */
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 1.75rem;
+            border-radius: var(--r);
+            box-shadow: var(--shadow-sm);
+            padding: 2rem;
         }
 
-        /* ===== フォーム共通スタイル ===== */
-        .form .field {
-            margin-bottom: 1.25rem;
-        }
+        /* ===== フォーム ===== */
+        .form .field { margin-bottom: 1.5rem; }
         .form label {
             display: block;
+            font-size: 0.875rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.45rem;
+            color: var(--text-2);
+            margin-bottom: 0.5rem;
         }
         .form input[type="text"],
         .form input[type="search"],
-        .form input[type="file"],
         .form select,
         .form textarea {
             width: 100%;
-            padding: 0.6rem 0.75rem;
+            padding: 0.65rem 0.9rem;
             font-size: 0.95rem;
             font-family: inherit;
             color: var(--text);
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-s);
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            appearance: none;
         }
         .form input[type="text"]:focus,
         .form input[type="search"]:focus,
         .form select:focus,
         .form textarea:focus {
-            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+        }
+        /* ファイルアップロードゾーン */
+        .file-drop-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 2.5rem 2rem;
+            border: 2px dashed var(--border);
+            border-radius: var(--r);
+            background: var(--surface-2);
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            text-align: center;
+        }
+        .file-drop-zone:hover {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
+            background: var(--accent-light);
         }
-        /* ファイル選択ボタンの体裁を整える */
-        .form input[type="file"] {
-            padding: 0.5rem;
+        .file-drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
             cursor: pointer;
+            width: 100%;
+            height: 100%;
         }
-        .form input[type="file"]::file-selector-button {
-            margin-right: 0.85rem;
-            padding: 0.45rem 0.9rem;
-            font-family: inherit;
-            font-size: 0.85rem;
+        .file-drop-zone .upload-icon {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-xs);
+            font-size: 1.3rem;
+        }
+        .file-drop-zone .upload-label {
+            font-size: 0.9rem;
             font-weight: 600;
-            color: var(--accent);
-            background: var(--accent-soft);
-            border: none;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: background 0.15s ease;
+            color: var(--text-2);
         }
-        .form input[type="file"]::file-selector-button:hover {
-            background: #e0e7ff;
+        .file-drop-zone .upload-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
         .form small {
             display: block;
             margin-top: 0.4rem;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
         }
 
+        /* ===== セレクトボックス矢印 ===== */
+        .form select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.9rem center;
+            padding-right: 2.5rem;
+        }
+
         /* ===== ボタン ===== */
-        button[type="submit"],
-        .btn {
+        .btn,
+        button[type="submit"] {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.4rem;
-            font-size: 0.95rem;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.65rem 1.5rem;
+            font-size: 0.9rem;
             font-weight: 600;
             font-family: inherit;
             color: #fff;
             background: var(--accent);
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: var(--r-s);
             cursor: pointer;
-            transition: background 0.15s ease, transform 0.05s ease;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(99,102,241,.3), inset 0 1px 0 rgba(255,255,255,.1);
+            transition: background .15s, box-shadow .15s, transform .08s;
         }
-        button[type="submit"]:hover,
-        .btn:hover {
-            background: var(--accent-hover);
+        .btn:hover,
+        button[type="submit"]:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 4px 12px rgba(99,102,241,.4), inset 0 1px 0 rgba(255,255,255,.1);
         }
-        button[type="submit"]:active,
-        .btn:active {
+        .btn:active,
+        button[type="submit"]:active {
             transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(99,102,241,.2);
         }
+        .btn-outline {
+            background: transparent;
+            color: var(--text-2);
+            border: 1.5px solid var(--border);
+            box-shadow: var(--shadow-xs);
+        }
+        .btn-outline:hover {
+            background: var(--surface-2);
+            border-color: var(--border);
+            color: var(--text);
+            box-shadow: var(--shadow-xs);
+        }
+        .actions { margin-top: 1.75rem; display: flex; gap: 0.75rem; }
 
-        /* ===== エラーメッセージ ===== */
+        /* ===== エラー ===== */
         .error-messages {
-            background: var(--danger-soft);
+            background: var(--danger-bg);
             border: 1px solid #fecaca;
-            border-radius: var(--radius-sm);
-            padding: 0.85rem 1rem;
-            margin-bottom: 1.25rem;
+            border-radius: var(--r-s);
+            padding: 0.9rem 1.1rem;
+            margin-bottom: 1.5rem;
         }
-        .error,
-        .field-error {
+        .error, .field-error {
             color: var(--danger);
-            font-size: 0.88rem;
-            margin: 0.25rem 0;
-        }
-        .field-error {
-            margin-top: 0.4rem;
+            font-size: 0.85rem;
+            margin: 0.2rem 0;
         }
 
-        /* ===== 検索結果リスト ===== */
+        /* ===== 検索結果 ===== */
         .search-results {
             list-style: none;
-            padding: 0;
-            margin: 1.75rem 0 0;
+            margin-top: 2rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -227,87 +306,155 @@
         .search-result-item {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-left: 3px solid var(--accent);
-            border-radius: var(--radius-sm);
-            padding: 1.1rem 1.25rem;
+            border-radius: var(--r);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow .2s, border-color .2s;
+            position: relative;
+        }
+        .search-result-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent) 0%, #818cf8 100%);
+            border-radius: var(--r) 0 0 var(--r);
+        }
+        .search-result-item:hover {
             box-shadow: var(--shadow);
+            border-color: #c7d2fe;
         }
         .chunk-content {
-            margin: 0 0 0.65rem;
-            color: var(--text);
+            font-size: 0.925rem;
+            color: var(--text-2);
+            line-height: 1.7;
+            margin-bottom: 0.85rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         .chunk-source {
-            display: inline-block;
-            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 500;
             color: var(--text-muted);
-            background: var(--bg);
-            padding: 0.2rem 0.6rem;
+            background: var(--surface-2);
+            padding: 0.2rem 0.65rem;
             border-radius: 999px;
+            border: 1px solid var(--border);
+        }
+        .chunk-source::before {
+            content: "📄";
+            font-size: 0.72rem;
         }
         .no-results {
-            margin-top: 1.75rem;
-            padding: 1.5rem;
+            margin-top: 2rem;
+            padding: 3rem 2rem;
             text-align: center;
             color: var(--text-muted);
             background: var(--surface);
             border: 1px dashed var(--border);
-            border-radius: var(--radius);
+            border-radius: var(--r);
+            font-size: 0.9rem;
+        }
+        .no-results::before {
+            content: "🔍";
+            display: block;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
         }
 
-        /* ===== ドキュメント詳細（定義リスト） ===== */
-        .detail-list {
-            margin: 0;
-        }
-        .detail-list dt {
-            font-size: 0.82rem;
-            font-weight: 600;
+        /* ===== ドキュメント詳細 ===== */
+        .detail-list { display: flex; flex-direction: column; gap: 1.25rem; }
+        .detail-row { display: flex; flex-direction: column; gap: 0.3rem; }
+        .detail-row dt {
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
             color: var(--text-muted);
-            margin-top: 1.1rem;
         }
-        .detail-list dt:first-child {
-            margin-top: 0;
+        .detail-row dd {
+            font-size: 0.95rem;
+            color: var(--text-2);
         }
-        .detail-list dd {
-            margin: 0.3rem 0 0;
-            font-size: 1rem;
-        }
-        .detail-list a {
+        .detail-row a {
             color: var(--accent);
             font-weight: 500;
+            text-decoration: none;
         }
+        .detail-row a:hover { text-decoration: underline; }
 
         /* ===== ステータスバッジ ===== */
         .badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem 0.7rem;
-            font-size: 0.85rem;
+            gap: 0.4rem;
+            padding: 0.28rem 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             border-radius: 999px;
+            letter-spacing: 0.01em;
         }
-        .badge::before {
-            content: "";
-            width: 0.5rem;
-            height: 0.5rem;
+        .badge-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: currentColor;
+            flex-shrink: 0;
         }
-        .badge-processing { color: var(--warning); background: #fffbeb; }
-        .badge-complete   { color: var(--success); background: #f0fdf4; }
-        .badge-failed     { color: var(--danger);  background: var(--danger-soft); }
-        .badge-pending    { color: var(--text-muted); background: var(--bg); }
+        .badge-processing {
+            color: var(--warning);
+            background: var(--warning-bg);
+            border: 1px solid #fde68a;
+        }
+        .badge-processing .badge-dot { background: var(--warning); animation: pulse 1.5s infinite; }
+        .badge-complete {
+            color: var(--success);
+            background: var(--success-bg);
+            border: 1px solid #a7f3d0;
+        }
+        .badge-complete .badge-dot { background: var(--success); }
+        .badge-failed {
+            color: var(--danger);
+            background: var(--danger-bg);
+            border: 1px solid #fecaca;
+        }
+        .badge-failed .badge-dot { background: var(--danger); }
+        .badge-pending {
+            color: var(--text-muted);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+        .badge-pending .badge-dot { background: var(--text-muted); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+
+        /* ===== レスポンシブ ===== */
+        @media (max-width: 640px) {
+            nav { padding: 0 1rem; }
+            main { padding: 2rem 1rem 4rem; }
+            .card { padding: 1.25rem; }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <header class="site-header">
         <nav>
-            <span class="brand"><span class="logo">KB</span>PDFナレッジベース</span>
-            {% url 'knowledge_base:upload' as upload_url %}{% if upload_url %}<a class="nav-link" href="{{ upload_url }}">アップロード</a>{% endif %}
-            {% url 'knowledge_base:search' as search_url %}{% if search_url %}<a class="nav-link" href="{{ search_url }}">検索</a>{% endif %}
+            <a href="{% url 'knowledge_base:upload' %}" class="brand">
+                <span class="brand-icon">KB</span>
+                Knowledge Base
+            </a>
+            <a class="nav-link" href="{% url 'knowledge_base:upload' %}">アップロード</a>
+            <a class="nav-link" href="{% url 'knowledge_base:search' %}">検索</a>
         </nav>
     </header>
 
