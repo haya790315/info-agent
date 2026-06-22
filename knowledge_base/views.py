@@ -98,7 +98,7 @@ class SearchView(View):
 
     GET  /search/  → 空のフォームを表示する
     POST /search/  → クエリをベクトル化して類似チャンクを検索し結果を返す
-                     HX-Request ヘッダーが付く場合はパーシャルのみ返す
+                    HX-Request ヘッダーが付く場合はパーシャルのみ返す
     """
 
     def get(self, request):

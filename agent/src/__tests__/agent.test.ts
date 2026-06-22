@@ -3,12 +3,11 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { createAgentLoop } from "./agent";
-import { LLMError, type LLMClient } from "./llm";
-import { createSessionStore } from "./session";
-import { createToolRegistry } from "./tools/registry";
-import type { KbClient } from "./tools/kbClient";
-import type { AssistantTurn, ChatMessage, LLMToolSpec } from "./types";
+import { createAgentLoop } from "../agent";
+import { LLMError } from "../llm";
+import { createSessionStore } from "../session";
+import { createToolRegistry } from "../tools/registry";
+import type { AssistantTurn, ChatMessage, KbClient, LLMClient, LLMToolSpec } from "../types";
 
 function fakeKb(overrides: Partial<KbClient> = {}): KbClient {
   return {

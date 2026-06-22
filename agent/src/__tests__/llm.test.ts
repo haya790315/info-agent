@@ -3,8 +3,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import type { Config } from "./config";
-import { type ChatCompletionPort, createLLMClient, LLMError } from "./llm";
+import type { Config } from "../config";
+import { type ChatCompletionPort, createLLMClient, LLMError } from "../llm";
 
 const config: Config = {
   openaiApiKey: "key",

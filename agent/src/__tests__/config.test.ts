@@ -3,7 +3,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { loadConfig } from "./config";
+import { loadConfig } from "../config";
 
 describe("loadConfig", () => {
   test("必須の環境変数が欠落していればエラーを投げる", () => {
@@ -19,7 +19,7 @@ describe("loadConfig", () => {
       OPENAI_API_KEY: "key",
       KB_API_BASE_URL: "http://localhost:8000",
     });
-    expect(config.openaiModel).toBe("gpt-4o-mini");
+    expect(config.openaiModel).toBe("gpt-5.4-mini");
     expect(config.openaiBaseUrl).toBeUndefined();
     expect(config.openaiApiKey).toBe("key");
     expect(config.kbApiBaseUrl).toBe("http://localhost:8000");

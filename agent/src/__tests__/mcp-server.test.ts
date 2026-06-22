@@ -4,9 +4,9 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { makeHandler } from "./mcp-server";
-import { createToolRegistry, getTool } from "./tools/registry";
-import type { KbClient } from "./tools/kbClient";
+import { makeHandler } from "../mcp-server";
+import { createToolRegistry, getTool } from "../tools/registry";
+import type { KbClient } from "../types";
 
 function fakeKb(overrides: Partial<KbClient> = {}): KbClient {
   return {
@@ -43,6 +43,6 @@ describe("MCP ハンドラ一貫性", () => {
     const tool = getTool(registry, "get_document_detail");
     const viaMcp = await makeHandler(tool)({ document_id: 999 });
     expect(viaMcp.isError).toBe(true);
-    expect(viaMcp.content[0]?.text).toContain("文档不存在");
+    expect(viaMcp.content[0]?.text).toContain("文書が見つかりません");
   });
 });

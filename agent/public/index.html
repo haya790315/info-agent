@@ -4,257 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ナレッジベース エージェント</title>
-    <style>
-      /* ===== デザイントークン（Claude 風の温かみのある配色） ===== */
-      :root {
-        --bg: #f0eee6;            /* クリーム色の背景 */
-        --surface: #ffffff;
-        --text: #1f1e1c;
-        --text-muted: #6e6a63;
-        --accent: #d97757;        /* Claude のコーラルオレンジ */
-        --accent-hover: #c4684a;
-        --user-bubble: #f0eee6;
-        --border: #e5e1d8;
-        --shadow: 0 1px 2px rgba(30, 28, 26, 0.06);
-        --shadow-lg: 0 4px 24px rgba(30, 28, 26, 0.1);
-        --radius: 16px;
-      }
-
-      * { box-sizing: border-box; }
-
-      html, body { height: 100%; }
-
-      body {
-        font-family: ui-sans-serif, -apple-system, "Segoe UI",
-          "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.7;
-        -webkit-font-smoothing: antialiased;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      }
-
-      /* ===== ヘッダー ===== */
-      header {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        padding: 0.85rem 1.25rem;
-        background: rgba(240, 238, 230, 0.85);
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
-      }
-      header .logo {
-        width: 1.9rem;
-        height: 1.9rem;
-        border-radius: 50%;
-        background: var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        flex-shrink: 0;
-      }
-      header .logo svg { width: 1.1rem; height: 1.1rem; }
-      header h1 {
-        font-size: 1rem;
-        font-weight: 600;
-        margin: 0;
-        letter-spacing: -0.01em;
-      }
-
-      /* ===== メッセージ領域 ===== */
-      #messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1.5rem 1rem 1rem;
-      }
-      .messages-inner {
-        max-width: 740px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-
-      /* 1 メッセージ行: アバター + 本文 */
-      .row {
-        display: flex;
-        gap: 0.85rem;
-        align-items: flex-start;
-        animation: fade-in 0.35s ease;
-      }
-      .row.user { flex-direction: row-reverse; }
-
-      .avatar {
-        width: 1.9rem;
-        height: 1.9rem;
-        border-radius: 50%;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 0.15rem;
-      }
-      .avatar.agent { background: var(--accent); color: #fff; }
-      .avatar.agent svg { width: 1.05rem; height: 1.05rem; }
-      .avatar.user { background: #d6d1c4; color: #5a554c; }
-
-      /* 本文バブル */
-      .msg {
-        padding: 0.7rem 1rem;
-        border-radius: var(--radius);
-        white-space: pre-wrap;
-        word-break: break-word;
-        max-width: 100%;
-      }
-      .row.agent .msg {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-top-left-radius: 4px;
-        box-shadow: var(--shadow);
-      }
-      .row.user .msg {
-        background: var(--user-bubble);
-        border: 1px solid var(--border);
-        border-top-right-radius: 4px;
-      }
-      .msg a { color: var(--accent); text-decoration: none; font-weight: 500; }
-      .msg a:hover { text-decoration: underline; }
-
-      /* エラーメッセージ */
-      .row.agent .msg.error {
-        background: #fdf0ed;
-        border-color: #f3c9bd;
-        color: #b4472a;
-      }
-
-      /* ===== 「考え中」インジケータ（脈動するドット） ===== */
-      .thinking {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.85rem 1rem;
-      }
-      .thinking .dot {
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 50%;
-        background: var(--accent);
-        opacity: 0.4;
-        animation: pulse 1.2s ease-in-out infinite;
-      }
-      .thinking .dot:nth-child(2) { animation-delay: 0.2s; }
-      .thinking .dot:nth-child(3) { animation-delay: 0.4s; }
-
-      @keyframes pulse {
-        0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
-        30%           { opacity: 1;   transform: scale(1); }
-      }
-      @keyframes fade-in {
-        from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-
-      /* ===== ウェルカム（初期表示） ===== */
-      .welcome {
-        text-align: center;
-        color: var(--text-muted);
-        margin: 3rem auto;
-        max-width: 460px;
-      }
-      .welcome .big-logo {
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 50%;
-        background: var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        margin: 0 auto 1rem;
-      }
-      .welcome .big-logo svg { width: 2rem; height: 2rem; }
-      .welcome h2 { color: var(--text); font-size: 1.3rem; margin: 0 0 0.5rem; font-weight: 600; }
-      .welcome p { margin: 0; font-size: 0.95rem; }
-
-      /* ===== 入力フォーム（コンポーザ） ===== */
-      .composer-wrap {
-        flex-shrink: 0;
-        padding: 0.75rem 1rem 1.25rem;
-        background: linear-gradient(to top, var(--bg) 60%, transparent);
-      }
-      form {
-        max-width: 740px;
-        margin: 0 auto;
-        display: flex;
-        align-items: flex-end;
-        gap: 0.5rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 1.5rem;
-        padding: 0.4rem 0.4rem 0.4rem 1.1rem;
-        box-shadow: var(--shadow-lg);
-        transition: border-color 0.15s ease;
-      }
-      form:focus-within { border-color: var(--accent); }
-
-      #q {
-        flex: 1;
-        border: none;
-        outline: none;
-        resize: none;
-        background: transparent;
-        font-family: inherit;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: var(--text);
-        max-height: 160px;
-        padding: 0.5rem 0;
-      }
-      #q::placeholder { color: var(--text-muted); }
-
-      button#send {
-        flex-shrink: 0;
-        width: 2.4rem;
-        height: 2.4rem;
-        border: none;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #fff;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.15s ease, opacity 0.15s ease;
-      }
-      button#send:hover:not(:disabled) { background: var(--accent-hover); }
-      button#send:disabled { opacity: 0.4; cursor: not-allowed; }
-      button#send svg { width: 1.15rem; height: 1.15rem; }
-
-      .hint {
-        max-width: 740px;
-        margin: 0.5rem auto 0;
-        text-align: center;
-        font-size: 0.75rem;
-        color: var(--text-muted);
-      }
-
-      /* スクロールバーを控えめに */
-      #messages::-webkit-scrollbar { width: 8px; }
-      #messages::-webkit-scrollbar-thumb { background: #d6d1c4; border-radius: 4px; }
-    </style>
+    <link rel="stylesheet" href="css/chat.css" />
   </head>
   <body>
     <header>
       <span class="logo">
-        <!-- 簡素なスパーク（火花）アイコン -->
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/>
         </svg>
@@ -262,10 +16,15 @@
       <h1>ナレッジベース エージェント</h1>
     </header>
 
-    <div id="messages">
-      <div class="messages-inner" id="messages-inner">
-        <!-- 初期ウェルカム表示（最初の送信で消える） -->
-        <div class="welcome" id="welcome">
+    <div class="chat-area" id="chat-area">
+      <!-- アクティブ時: メッセージ一覧（CSS で初期非表示） -->
+      <div id="messages">
+        <div class="messages-inner" id="messages-inner"></div>
+      </div>
+
+      <!-- 初期ランディング: ウェルカム ＋ 入力欄を中央に束ねる -->
+      <div class="landing" id="landing">
+        <div class="welcome">
           <div class="big-logo">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/>
@@ -274,160 +33,28 @@
           <h2>こんにちは</h2>
           <p>今日は何を探していますか？</p>
         </div>
+
+        <!-- 入力欄は初期状態ここに置く。送信後に chat-area 直下へ移動する -->
+        <div class="composer-wrap" id="composer-wrap">
+          <form id="chat-form">
+            <textarea
+              id="q"
+              rows="1"
+              placeholder="質問を入力してください…"
+              autocomplete="off"
+            ></textarea>
+            <button type="submit" id="send" aria-label="送信">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            </button>
+          </form>
+          <p class="hint">Enter で送信 / Shift + Enter で改行</p>
+        </div>
       </div>
     </div>
 
-    <div class="composer-wrap">
-      <form id="chat-form">
-        <textarea
-          id="q"
-          rows="1"
-          placeholder="質問を入力してください…"
-          autocomplete="off"
-        ></textarea>
-        <button type="submit" id="send" aria-label="送信">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
-        </button>
-      </form>
-      <p class="hint">Enter で送信 / Shift + Enter で改行</p>
-    </div>
-
-    <script>
-      // 会話セッションIDをページ存続中だけ保持する（多輪）
-      let sessionId = null;
-      let busy = false; // LLM 実行中フラグ（二重送信防止）
-
-      const messages = document.getElementById("messages");
-      const inner = document.getElementById("messages-inner");
-      const welcome = document.getElementById("welcome");
-      const form = document.getElementById("chat-form");
-      const input = document.getElementById("q");
-      const sendBtn = document.getElementById("send");
-
-      function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-      }
-
-      // URL をクリック可能なリンクに変換する（出典リンク用）
-      function linkify(text) {
-        const escaped = escapeHtml(text);
-        return escaped.replace(/(https?:\/\/[^\s）)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-      }
-
-      // SVG アバター（エージェント用スパークアイコン）
-      const AGENT_AVATAR =
-        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/></svg>';
-
-      // 1 メッセージ行（アバター + バブル）を追加する
-      function addMessage(text, cls, asHtml) {
-        if (welcome) welcome.style.display = "none";
-
-        const isAgent = cls.split(" ").includes("agent");
-
-        const row = document.createElement("div");
-        row.className = "row " + cls;
-
-        const avatar = document.createElement("div");
-        // アバターは agent / user のみ（error 等の修飾クラスは付けない）
-        avatar.className = "avatar " + (isAgent ? "agent" : "user");
-        avatar.innerHTML = isAgent ? AGENT_AVATAR : "You";
-
-        const msg = document.createElement("div");
-        msg.className = "msg " + cls;
-        if (asHtml) msg.innerHTML = linkify(text);
-        else msg.textContent = text;
-
-        row.appendChild(avatar);
-        row.appendChild(msg);
-        inner.appendChild(row);
-        scrollToBottom();
-        return { row, msg };
-      }
-
-      // 「考え中」インジケータ（脈動ドット）を表示する
-      function addThinking() {
-        if (welcome) welcome.style.display = "none";
-        const row = document.createElement("div");
-        row.className = "row agent";
-        row.innerHTML =
-          '<div class="avatar agent">' + AGENT_AVATAR + "</div>" +
-          '<div class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
-        inner.appendChild(row);
-        scrollToBottom();
-        return row;
-      }
-
-      function scrollToBottom() {
-        messages.scrollTop = messages.scrollHeight;
-      }
-
-      // テキストエリアの高さを内容に合わせて自動調整する
-      function autoGrow() {
-        input.style.height = "auto";
-        input.style.height = Math.min(input.scrollHeight, 160) + "px";
-      }
-      input.addEventListener("input", autoGrow);
-
-      // Enter 送信 / Shift+Enter 改行
-      // IME（日本語・中国語など）で変換中の Enter は候補確定なので送信しない。
-      // e.isComposing と keyCode===229 の両方を見る（ブラウザ差異の保険）。
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          if (e.isComposing || e.keyCode === 229) return;
-          e.preventDefault();
-          form.requestSubmit();
-        }
-      });
-
-      function setBusy(state) {
-        busy = state;
-        sendBtn.disabled = state;
-        input.disabled = state;
-      }
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (busy) return;
-        const question = input.value.trim();
-        if (!question) return;
-
-        input.value = "";
-        autoGrow();
-        addMessage(question, "user", false);
-
-        setBusy(true);
-        // 処理中インジケータ（脈動ドット）
-        const thinking = addThinking();
-
-        try {
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: question, sessionId }),
-          });
-          const data = await res.json();
-          thinking.remove();
-          if (!res.ok) {
-            addMessage(data.error || "エラーが発生しました。", "agent error", false);
-            return;
-          }
-          sessionId = data.sessionId;
-          addMessage(data.answer, "agent", true);
-        } catch (err) {
-          thinking.remove();
-          addMessage("通信エラーが発生しました。", "agent error", false);
-        } finally {
-          setBusy(false);
-          input.focus();
-        }
-      });
-
-      input.focus();
-    </script>
+    <script src="js/chat.js"></script>
   </body>
 </html>

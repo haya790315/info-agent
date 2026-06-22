@@ -271,44 +271,6 @@ curl "http://localhost:8080/api/search/?q=プロジェクト概要"
 
 ---
 
-## プロジェクト構成
-
-```
-info-agent/
-├── agent/                   # AI エージェントサービス（TypeScript/Bun）
-│   ├── src/
-│   │   ├── index.ts         # Hono Web サーバーエントリポイント
-│   │   ├── agent.ts         # エージェントループ（Function Calling）
-│   │   ├── llm.ts           # OpenAI API インテグレーション
-│   │   ├── session.ts       # 会話セッション管理
-│   │   ├── mcp-server.ts    # MCP サーバー実装
-│   │   ├── config.ts        # 設定読み込み
-│   │   └── tools/
-│   │       ├── registry.ts  # ツール定義（3 ツール）
-│   │       └── kbClient.ts  # 知識ベース REST クライアント
-│   ├── .env.example         # 環境変数テンプレート
-│   └── package.json
-├── config/                  # Django プロジェクト設定
-│   ├── settings.py
-│   └── test_settings.py
-├── knowledge_base/          # RAG コアアプリ（Django）
-│   ├── models.py            # Document / Chunk モデル
-│   ├── views.py             # Web UI ビュー
-│   ├── api_views.py         # JSON REST API
-│   ├── services/
-│   │   ├── processor.py     # PDF テキスト抽出・チャンク分割
-│   │   ├── embedder.py      # ベクトル埋め込み生成
-│   │   └── searcher.py      # pgvector 類似度検索
-│   └── templates/kb/        # HTMX テンプレート
-├── media/pdfs/              # アップロード PDF の保存先
-├── docker-compose.yml       # PostgreSQL + pgvector
-├── Makefile                 # 開発コマンド
-├── manage.py                # Django CLI
-└── requirements.txt         # Python 依存パッケージ
-```
-
----
-
 ## トラブルシューティング
 
 **`make db-start` でコンテナが起動しない**

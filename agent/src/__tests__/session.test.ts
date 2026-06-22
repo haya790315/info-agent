@@ -3,8 +3,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { createSessionStore } from "./session";
-import type { ChatMessage } from "./types";
+import { createSessionStore } from "../session";
+import type { ChatMessage } from "../types";
 
 const userMsg = (text: string): ChatMessage => ({ role: "user", content: text });
 

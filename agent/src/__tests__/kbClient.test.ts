@@ -3,7 +3,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { createKbClient, KbApiError } from "./kbClient";
+import { createKbClient, KbApiError } from "../tools/kbClient";
 
 /** 指定の body/status を返す fetch モック */
 function fetchReturning(body: unknown, status = 200): typeof fetch {

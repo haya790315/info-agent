@@ -7,7 +7,7 @@
 export interface Config {
   /** OpenAI API キー（必須） */
   openaiApiKey: string;
-  /** 使用するモデル（既定: gpt-4o-mini） */
+  /** 使用するモデル（既定: gpt-5.4-mini） */
   openaiModel: string;
   /** OpenAI 互換エンドポイントの base URL（任意、未設定なら undefined） */
   openaiBaseUrl: string | undefined;
@@ -57,7 +57,7 @@ export function loadConfig(
   return {
     // 上の検証で undefined でないことが保証されている
     openaiApiKey: openaiApiKey as string,
-    openaiModel: env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
+    openaiModel: env.OPENAI_MODEL?.trim() || "gpt-5.4-mini",
     openaiBaseUrl: openaiBaseUrl ? openaiBaseUrl : undefined,
     kbApiBaseUrl: kbApiBaseUrl as string,
     searchMaxDistance,

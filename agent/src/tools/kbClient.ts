@@ -1,9 +1,10 @@
 /**
- * KbClient: ナレッジベース Django REST API のクライアント
- * 本サービスで唯一ナレッジベースにアクセスするコンポーネント。
+ * KbClient: ナレッジベース Django REST API のクライアント実装。
  * Django の snake_case JSON を camelCase DTO に変換する（マッピングはこの境界で完結）。
  */
-import type { DocumentDetail, DocumentSummary, SearchResultItem } from "../types";
+import type { DocumentDetail, DocumentSummary, KbClient, SearchResultItem } from "../types";
+
+export type { KbClient };
 
 /** 上流 API のエラー（到達不能 / 404 以外の非 2xx） */
 export class KbApiError extends Error {
@@ -15,19 +16,10 @@ export class KbApiError extends Error {
   }
 }
 
-export interface KbClient {
-  /** POST /api/search/ {query, category?} → 関連チャンク（空なら []） */
-  search(query: string, category?: string): Promise<SearchResultItem[]>;
-  /** GET /api/documents/ → 全ドキュメント（空なら []） */
-  listDocuments(): Promise<DocumentSummary[]>;
-  /** GET /api/documents/<id>/ → ドキュメント詳細（存在しなければ null） */
-  getDocument(documentId: number): Promise<DocumentDetail | null>;
-}
-
 /** fetch の型（テストでモック注入できるようにする） */
 type FetchFn = typeof fetch;
 
-// Django から返る生の形（snake_case）
+// Django から返る生の形（snake_case、このファイル内のみ）
 interface RawSearchItem {
   content: string;
   filename: string;

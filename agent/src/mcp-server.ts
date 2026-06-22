@@ -1,6 +1,6 @@
 /**
  * MCPServer: stdio で MCP プロトコル経由に同一のツール群を公開する。
- * Agent と同じ ToolRegistry.execute を呼ぶため、同入力なら結果は一致する（要件 9.3）。
+ * Agent と同じ ToolRegistry.execute を呼ぶため、同入力なら結果は一致する。
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";

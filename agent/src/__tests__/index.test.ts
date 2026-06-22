@@ -3,8 +3,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { createApp } from "./index";
-import type { AgentService } from "./agent";
+import { createApp } from "../index";
+import type { AgentService } from "../agent";
 
 function mockAgent(): { agent: AgentService; calls: string[] } {
   const calls: string[] = [];

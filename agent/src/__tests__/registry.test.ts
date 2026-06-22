@@ -3,8 +3,9 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { KbApiError, type KbClient } from "./kbClient";
-import { createToolRegistry, getTool } from "./registry";
+import { KbApiError } from "../tools/kbClient";
+import type { KbClient } from "../types";
+import { createToolRegistry, getTool } from "../tools/registry";
 
 /** 既定は空を返し、必要な部分だけ上書きする KbClient フェイク */
 function fakeKb(overrides: Partial<KbClient> = {}): KbClient {
@@ -69,12 +70,12 @@ describe("ToolRegistry", () => {
     expect(result.ok).toBe(false);
   });
 
-  test("get_document_detail は不存在で {ok:false,error:文档不存在}", async () => {
+  test("get_document_detail は不存在で {ok:false,error:文書が見つかりません}", async () => {
     const reg = createToolRegistry(fakeKb({ getDocument: async () => null }));
     const tool = getTool(reg, "get_document_detail");
     expect(await tool.execute({ document_id: 999 })).toEqual({
       ok: false,
-      error: "文档不存在",
+      error: "文書が見つかりません",
     });
   });
 

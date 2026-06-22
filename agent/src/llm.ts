@@ -1,31 +1,17 @@
 /**
  * LLMClient: OpenAI Chat Completions の Function Calling 呼び出しを封装する。
- * Chat Completions API を使う（Responses API は使わない）。
  * 会話状態は持たない（履歴は呼び出し側が渡す）。失敗時は LLMError を投げる。
  */
 import OpenAI from "openai";
 
 import type { Config } from "./config";
-import type { AssistantTurn, ChatMessage, LLMToolSpec } from "./types";
+import type { AssistantTurn, ChatMessage, LLMClient, LLMToolSpec } from "./types";
 
 export class LLMError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "LLMError";
   }
-}
-
-// OpenAI 応答のうち本サービスが参照する最小形
-interface OpenAIToolCall {
-  id: string;
-  function: { name: string; arguments: string };
-}
-interface OpenAIResponseMessage {
-  content: string | null;
-  tool_calls?: OpenAIToolCall[];
-}
-interface OpenAIChatResponse {
-  choices: Array<{ message: OpenAIResponseMessage }>;
 }
 
 /** Chat Completions 呼び出しのポート（テストでモック注入できるよう抽象化） */
@@ -35,11 +21,26 @@ export interface ChatCompletionPort {
     messages: ReadonlyArray<Record<string, unknown>>;
     tools?: ReadonlyArray<Record<string, unknown>>;
     tool_choice?: "auto" | "none";
-  }): Promise<OpenAIChatResponse>;
+  }): Promise<{
+    choices: Array<{
+      message: {
+        content: string | null;
+        tool_calls?: Array<{
+          id: string;
+          function: { name: string; arguments: string };
+        }>;
+      };
+    }>;
+  }>;
 }
 
-export interface LLMClient {
-  chat(messages: ChatMessage[], tools: LLMToolSpec[]): Promise<AssistantTurn>;
+// OpenAI 応答の最小形（このファイル内でのみ使う）
+interface OpenAIResponseMessage {
+  content: string | null;
+  tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
+}
+interface OpenAIChatResponse {
+  choices: Array<{ message: OpenAIResponseMessage }>;
 }
 
 /** 本サービスの ChatMessage を OpenAI メッセージ形へ変換する */
@@ -92,9 +93,7 @@ function openAIPort(config: Config): ChatCompletionPort {
   return {
     async create(params) {
       const res = await client.chat.completions.create(
-        params as unknown as Parameters<
-          typeof client.chat.completions.create
-        >[0],
+        params as unknown as Parameters<typeof client.chat.completions.create>[0],
       );
       return res as unknown as OpenAIChatResponse;
     },
@@ -111,10 +110,7 @@ export function createLLMClient(
   port: ChatCompletionPort = openAIPort(config),
 ): LLMClient {
   return {
-    async chat(
-      messages: ChatMessage[],
-      tools: LLMToolSpec[],
-    ): Promise<AssistantTurn> {
+    async chat(messages: ChatMessage[], tools: LLMToolSpec[]): Promise<AssistantTurn> {
       const oaMessages = messages.map(toOpenAIMessage);
       const oaTools = tools.length > 0 ? tools.map(toOpenAITool) : undefined;
 
