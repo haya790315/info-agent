@@ -101,6 +101,11 @@
             color: var(--accent);
             background: var(--accent-light);
         }
+        .nav-link.active {
+            color: var(--accent);
+            background: var(--accent-light);
+            font-weight: 600;
+        }
 
         /* ===== ページレイアウト ===== */
         main {
@@ -453,8 +458,8 @@
                 <span class="brand-icon">KB</span>
                 Knowledge Base
             </a>
-            <a class="nav-link" href="{% url 'knowledge_base:upload' %}">アップロード</a>
-            <a class="nav-link" href="{% url 'knowledge_base:search' %}">検索</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" href="{% url 'knowledge_base:upload' %}">アップロード</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}" href="{% url 'knowledge_base:search' %}">検索</a>
         </nav>
     </header>
 
