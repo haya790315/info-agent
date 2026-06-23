@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>使い方 — Info-Agent</title>
+<style>
+:root{--bg-primary:#0a0e1a;--bg-card:#1a2235;--bg-card-hover:#1e2a42;--accent:#34a853;--accent-light:rgba(52,168,83,0.15);--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e3a5f;--sidebar-width:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(52,168,83,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(52,168,83,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1000px;position:relative;z-index:1}
+.page-header{margin-bottom:36px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+
+.module-hero{display:flex;align-items:flex-start;gap:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px;border-left:3px solid var(--accent)}
+.hero-icon{width:56px;height:56px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.hero-title{font-size:26px;font-weight:800;color:var(--text-primary)}
+.hero-service{font-size:12px;color:var(--accent);font-family:monospace}
+.hero-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+.section{margin-bottom:40px;animation:fadeInUp .5s ease both;scroll-margin-top:20vh}
+.section-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.flow-diagram{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.flow-col{display:flex;flex-direction:column;gap:8px}
+.flow-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.flow-down{text-align:center;color:var(--text-muted);font-size:20px;padding:4px 0;margin-left:20px}
+.flow-box{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;display:flex;align-items:center;gap:8px}
+.flow-box.blue{background:rgba(66,133,244,0.1);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.flow-box.green{background:rgba(52,168,83,0.1);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.flow-box.yellow{background:rgba(251,188,4,0.1);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.flow-box.purple{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.flow-box.orange{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.4);color:#fb923c}
+.flow-box.cyan{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.flow-box.red{background:rgba(234,67,53,0.1);border-color:rgba(234,67,53,0.4);color:#f87171}
+.flow-arrow{font-size:16px;color:var(--text-muted)}
+.flow-arrow.error{color:#f87171}
+
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px}
+.alert-box.info{background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25)}
+.alert-box.tip{background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.25)}
+.alert-box.warn{background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.25)}
+.alert-icon{font-size:18px;flex-shrink:0}
+.alert-content{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.alert-content strong{color:var(--text-primary)}
+
+.item-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:10px}
+.item-name{font-family:monospace;font-size:13px;font-weight:600;color:#7ab4ff;margin-bottom:6px}
+.item-detail{font-size:12px;color:var(--text-secondary);line-height:1.8}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.info-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-value.code{font-family:monospace;font-size:13px;color:#7ab4ff}
+.info-value.green{color:#6ee7a0}
+.info-value.yellow{color:#fcd34d}
+.info-value.red{color:#f87171}
+
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.status-card{border-radius:10px;padding:14px;border:1px solid}
+.status-card.pending{background:rgba(251,188,4,0.07);border-color:rgba(251,188,4,0.3)}
+.status-card.processing{background:rgba(6,182,212,0.07);border-color:rgba(6,182,212,0.3)}
+.status-card.complete{background:rgba(52,168,83,0.07);border-color:rgba(52,168,83,0.3)}
+.status-card.failed{background:rgba(234,67,53,0.07);border-color:rgba(234,67,53,0.3)}
+.status-name{font-size:13px;font-weight:600;margin-bottom:6px}
+.status-desc{font-size:12px;color:var(--text-secondary)}
+
+.code-wrap{position:relative;margin-bottom:16px}
+.code-lang{position:absolute;top:8px;left:10px;font-family:monospace;font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--text-primary)}
+.copy-btn.copied{color:#6ee7a0;border-color:rgba(52,168,83,0.4)}
+.code-block{background:#0f172a;border-radius:10px;padding:48px 20px 20px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:0}
+.code-comment{color:#64748b}
+.code-key{color:#c084fc}
+.code-val{color:#6ee7a0}
+.code-str{color:#fbbf24}
+
+.api-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.api-table{width:100%;border-collapse:collapse;font-size:13px}
+.api-table th{background:#0f172a;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.api-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+.api-table tr:last-child td{border-bottom:none}
+.api-table tr:hover td{background:rgba(255,255,255,0.02)}
+.api-table .path{font-family:monospace;color:#c084fc}
+.api-table .handler{font-family:monospace;font-size:11px;color:var(--text-muted)}
+.api-table .desc{color:var(--text-secondary);font-size:12px}
+.method-badge{display:inline-block;font-family:monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;min-width:52px;text-align:center;letter-spacing:.5px}
+.method-get{background:rgba(52,168,83,0.15);color:#6ee7a0;border:1px solid rgba(52,168,83,0.4)}
+.method-post{background:rgba(66,133,244,0.15);color:#7ab4ff;border:1px solid rgba(66,133,244,0.4)}
+
+.prev-next-nav{display:flex;justify-content:space-between;gap:16px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-decoration:none;flex:1;max-width:45%;transition:all .2s}
+.nav-btn:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.nav-btn.next{flex-direction:row-reverse;text-align:right}
+.nav-direction{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.nav-arrow{font-size:20px;color:var(--accent);flex-shrink:0}
+
+code{font-family:'Courier New',monospace;font-size:.85em;background:rgba(255,255,255,0.08);color:#7ab4ff;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sidebar{display:none}.main-content{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item current">📖 使い方</a>
+  <div class="sidebar-section">ページ目次</div>
+  <a href="#chat" class="toc-item">💬 AI対話</a>
+  <a href="#upload" class="toc-item">📤 PDFアップロード</a>
+  <a href="#search" class="toc-item">🔍 セマンティック検索</a>
+  <a href="#status" class="toc-item">📊 ドキュメントステータス</a>
+  <a href="#api" class="toc-item">🌐 REST API</a>
+  <a href="#admin" class="toc-item">⚙️ 管理画面</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item">📚 ナレッジベースサービス</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">トップ</a> › 使い方</div>
+    <div class="module-hero">
+      <div class="hero-icon">📖</div>
+      <div>
+        <div class="hero-title">使い方</div>
+        <div class="hero-service">Chat UI + Knowledge Base UI + REST API</div>
+        <div class="hero-desc">Info-Agentは2つの主要インターフェースを提供します。AI対話インターフェース（:3000）でドキュメントを自然言語で照会できます。ナレッジベースインターフェース（:8080）ではPDFのアップロード、ドキュメント管理、セマンティック検索を行えます。</div>
+        <div class="hero-tags">
+          <span class="tag">AI対話 :3000</span>
+          <span class="tag">ナレッジベース :8080</span>
+          <span class="tag">PDFアップロード</span>
+          <span class="tag">セマンティック検索</span>
+          <span class="tag">Django Admin</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="chat" style="animation-delay:.1s">
+    <h2 class="section-title">💬 AI対話インターフェース（localhost:3000）</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>Agentは自動的にナレッジベースを検索するタイミングを判断します</strong><br>
+        「ドキュメントを検索してください」と明示的に指示しなくても、Agentは質問の内容から <code>search_knowledge_base</code> などのツールを呼び出す必要があるかを自動判断し、回答に出典情報を付与します。
+      </div>
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-col">
+        <div class="flow-row">
+          <div class="flow-box blue">👤 ユーザーの質問</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">🤖 Agent判断</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box yellow">🧠 LLM（gpt-5.4-mini）</div>
+        </div>
+        <div class="flow-down">↓ ドキュメント検索が必要な場合</div>
+        <div class="flow-row">
+          <div class="flow-box green">🔍 search_knowledge_base</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box cyan">📚 ナレッジベースAPI</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box cyan">pgvector検索</div>
+        </div>
+        <div class="flow-down">↓ 結果を統合して回答</div>
+        <div class="flow-row">
+          <div class="flow-box green">✅ 回答 + 出典情報</div>
+        </div>
+        <div class="flow-row" style="margin-top:12px">
+          <div class="flow-arrow error">↘ LLMエラー時</div>
+          <div class="flow-box red">❌ サービス一時停止（エラーメッセージ）</div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-secondary);margin:16px 0 12px">使用例：</p>
+    <div class="item-card">
+      <div class="item-name">📝 一般的な照会</div>
+      <div class="item-detail">
+        「Aプロジェクトの仕様書の主要なポイントは何ですか？」<br>
+        「アップロードしたドキュメントのセキュリティポリシーについて説明してください」<br>
+        「2つの技術資料の違いを比較してください」
+      </div>
+    </div>
+    <div class="item-card">
+      <div class="item-name">📋 ドキュメント管理照会</div>
+      <div class="item-detail">
+        「現在アップロードされているドキュメントは何ですか？」→ Agentが <code>list_documents</code> を呼び出し<br>
+        「特定のドキュメントの詳細情報は？」→ Agentが <code>get_document_detail</code> を呼び出し
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">🔄</div>
+      <div class="alert-content"><strong>マルチターン会話のサポート：</strong>
+      システムは自動的に <code>sessionId</code> を割り当て、同じブラウザタブでの会話履歴を保持します。追加質問や多段階の会話が可能です。タブを閉じると会話記録は消去されます（メモリ保存）。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="upload" style="animation-delay:.15s">
+    <h2 class="section-title">📤 PDFアップロード（localhost:8080）</h2>
+    <div class="flow-diagram">
+      <div class="flow-col">
+        <div class="flow-row">
+          <div class="flow-box orange">📄 PDFファイルを選択</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">⬆️ アップロード（HTTP POST）</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box yellow">⏳ ステータス：pending</div>
+        </div>
+        <div class="flow-down">↓ 同期処理</div>
+        <div class="flow-row">
+          <div class="flow-box purple">📑 pymupdf テキスト抽出</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box blue">✂️ テキスト分割（Chunking）</div>
+        </div>
+        <div class="flow-down">↓</div>
+        <div class="flow-row">
+          <div class="flow-box cyan">🔢 MiniLM ベクトル埋め込み（384次元）</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box cyan">💾 pgvectorに保存</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">✅ ステータス：complete</div>
+        </div>
+        <div class="flow-row" style="margin-top:8px">
+          <div class="flow-arrow error">↘ 画像型PDF時</div>
+          <div class="flow-box red">❌ ステータス：failed（テキスト抽出不可）</div>
+        </div>
+      </div>
+    </div>
+    <div class="alert-box warn">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content"><strong>画像型PDFは非対応</strong><br>
+      スキャン式PDF（テキストが画像として保存）はテキスト抽出できないため、処理後のステータスが「失敗」になります。選択可能なテキストが含まれているPDFをご確認ください。
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">アップロード時にドキュメントのカテゴリを選択できます。カテゴリによってベクトル化のChunkサイズ戦略が変わります：</p>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">resume（職歴書）</div>
+        <div class="info-value code">400文字 / 100重複</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">policy（規程）</div>
+        <div class="info-value code">500文字 / 120重複</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">manual（操作マニュアル）</div>
+        <div class="info-value code">800文字 / 200重複</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">technical（技術資料）</div>
+        <div class="info-value code">1000文字 / 200重複</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">report（レポート）</div>
+        <div class="info-value code">800文字 / 150重複</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">other（その他）</div>
+        <div class="info-value code">700文字 / 150重複</div>
+      </div>
+    </div>
+    <div class="alert-box tip">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content"><strong>なぜChunkサイズをカテゴリ別に変えるのか？</strong><br>
+      職歴書の各項目は短くて独立しているため、小さいChunkでベクトルをより精確にします。技術資料は長い説明文があるため、大きいChunkで文脈を保持し、意味の断片化を防ぎます。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="search" style="animation-delay:.2s">
+    <h2 class="section-title">🔍 セマンティック検索（ナレッジベース Web UI）</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">🧠</div>
+      <div class="alert-content">
+        <strong>セマンティック検索 vs キーワード検索</strong><br>
+        本システムはベクトルのコサイン類似度検索を使用しているため、意味的に近い語彙も理解できます。例えば「人事規定」で検索すると「勤務規程」を含むドキュメントも見つかります。正確なキーワードは不要です。
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px"><code>http://localhost:8080</code> の検索ボックスにクエリ（自然言語またはキーワード）を入力すると、最も関連性の高いテキスト断片（デフォルト top-5）が返されます。</p>
+    <div class="item-card">
+      <div class="item-name">検索結果のフォーマット</div>
+      <div class="item-detail">
+        • <strong style="color:var(--text-primary)">ドキュメント名</strong> — 元PDFのファイル名<br>
+        • <strong style="color:var(--text-primary)">関連テキスト断片</strong> — 最も関連性の高いChunkの内容<br>
+        • <strong style="color:var(--text-primary)">コサイン距離</strong> — 小さいほど関連性が高い（0 = 完全一致）
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="status" style="animation-delay:.25s">
+    <h2 class="section-title">📊 ドキュメント処理ステータス</h2>
+    <div class="status-grid">
+      <div class="status-card pending">
+        <div class="status-name" style="color:#fcd34d">⏳ pending</div>
+        <div class="status-desc">処理待ち（アップロード直後の初期状態）</div>
+      </div>
+      <div class="status-card processing">
+        <div class="status-name" style="color:#67e8f9">⚙️ processing</div>
+        <div class="status-desc">テキスト抽出とベクトル化を実行中</div>
+      </div>
+      <div class="status-card complete">
+        <div class="status-name" style="color:#6ee7a0">✅ complete</div>
+        <div class="status-desc">処理完了、AI検索対応済み（Chunk数表示）</div>
+      </div>
+      <div class="status-card failed">
+        <div class="status-name" style="color:#f87171">❌ failed</div>
+        <div class="status-desc">処理失敗（エラーメッセージ表示、主に画像型PDF）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="api" style="animation-delay:.3s">
+    <h2 class="section-title">🌐 REST API（AgentまたはcURLで直接呼び出し可能）</h2>
+    <div class="api-table-wrap">
+      <table class="api-table">
+        <thead><tr><th>メソッド</th><th>パス</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/search/?q=クエリ</td>
+            <td class="desc">ベクトル類似度検索、top-5の関連Chunkを返す</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/search/?q=クエリ&amp;category=technical</td>
+            <td class="desc">カテゴリ絞り込み検索（特定のドキュメント種別のみ）</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/documents/</td>
+            <td class="desc">全ドキュメント一覧取得（ステータス、Chunk数を含む）</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/documents/&lt;id&gt;/</td>
+            <td class="desc">特定ドキュメントの詳細情報取得</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-wrap">
+      <span class="code-lang">Shell</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment"># セマンティック検索の例</span>
+<span class="code-key">curl</span> <span class="code-str">"http://localhost:8080/api/search/?q=プロジェクト仕様"</span>
+
+<span class="code-comment"># カテゴリ絞り込み検索</span>
+<span class="code-key">curl</span> <span class="code-str">"http://localhost:8080/api/search/?q=技術アーキテクチャ&amp;category=technical"</span>
+
+<span class="code-comment"># ドキュメント一覧</span>
+<span class="code-key">curl</span> <span class="code-str">"http://localhost:8080/api/documents/"</span></pre>
+    </div>
+  </div>
+
+  <div class="section" id="admin" style="animation-delay:.35s">
+    <h2 class="section-title">⚙️ Django管理画面</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px"><code>http://localhost:8080/admin/</code> でデータベース内のドキュメントとChunkデータを直接管理できます。事前にスーパーユーザーアカウントを作成する必要があります。</p>
+    <div class="code-wrap">
+      <span class="code-lang">Shell</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment"># 管理者アカウントの作成（対話式）</span>
+<span class="code-key">make</span> <span class="code-val">superuser</span></pre>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">管理画面URL</div>
+        <div class="info-value code">localhost:8080/admin/</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">管理対象</div>
+        <div class="info-value">Document、Chunk</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prev-next-nav">
+    <a href="setup.html" class="nav-btn prev">
+      <div class="nav-arrow">←</div>
+      <div><div class="nav-direction">前のページ</div><div class="nav-title">環境構築</div></div>
+    </a>
+    <a href="agent-service.html" class="nav-btn next">
+      <div><div class="nav-direction">次のページ</div><div class="nav-title">AI Agentサービス</div></div>
+      <div class="nav-arrow">→</div>
+    </a>
+  </div>
+</main>
+<script>
+function copyCode(btn){
+  const pre=btn.closest('.code-wrap').querySelector('.code-block');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ コピー完了';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='コピー';btn.classList.remove('copied')},2000);
+  });
+}
+const items=document.querySelectorAll('.toc-item[href^="#"]');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const t=document.querySelector(`.toc-item[href="#${e.target.id}"]`);
+      if(t)t.classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('[id]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>

@@ -82,7 +82,7 @@ class DocumentListAPIView(View):
 class DocumentDetailAPIView(View):
     """GET /api/documents/<pk>/ → ドキュメント詳細 JSON（存在しなければ 404）"""
 
-    def get(self, request, pk):
+    def get(self, request, pk) -> JsonResponse:
         try:
             doc = Document.objects.get(pk=pk)
         except Document.DoesNotExist:

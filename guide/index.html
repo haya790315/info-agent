@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Info-Agent — システム文書</title>
+<style>
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-card: #1a2235;
+  --bg-card-hover: #1e2a42;
+  --accent: #4285f4;
+  --accent-light: rgba(66,133,244,0.15);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #1e3a5f;
+  --sidebar-width: 260px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(66,133,244,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(66,133,244,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1100px;position:relative;z-index:1}
+
+.page-header{margin-bottom:40px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+.hero-section{background:linear-gradient(135deg,rgba(66,133,244,0.1),rgba(66,133,244,0.03));border:1px solid rgba(66,133,244,0.3);border-radius:20px;padding:40px;margin-bottom:32px}
+.hero-title{font-size:42px;font-weight:900;color:var(--text-primary);line-height:1.1;margin-bottom:8px}
+.hero-title span{background:linear-gradient(135deg,#4285f4,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-desc{font-size:16px;color:var(--text-secondary);line-height:1.7;margin-bottom:24px;max-width:720px}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+.badge.blue{background:rgba(66,133,244,0.12);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.badge.green{background:rgba(52,168,83,0.12);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.badge.yellow{background:rgba(251,188,4,0.12);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.badge.purple{background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.badge.cyan{background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.badge.orange{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.4);color:#fb923c}
+
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px;animation:fadeInUp .5s ease .1s both}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat-num{font-size:32px;font-weight:800;color:var(--accent);line-height:1}
+.stat-label{font-size:12px;color:var(--text-muted);margin-top:6px}
+
+.section{margin-bottom:40px;animation:fadeInUp .5s ease both}
+.section-title{font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:20px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.flow-diagram{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.flow-col{display:flex;flex-direction:column;gap:8px}
+.flow-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.flow-down{text-align:center;color:var(--text-muted);font-size:20px;padding:4px 0;margin-left:20px}
+.flow-box{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;display:flex;align-items:center;gap:8px}
+.flow-box.blue{background:rgba(66,133,244,0.1);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.flow-box.green{background:rgba(52,168,83,0.1);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.flow-box.yellow{background:rgba(251,188,4,0.1);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.flow-box.purple{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.flow-box.orange{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.4);color:#fb923c}
+.flow-box.cyan{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.flow-box.red{background:rgba(234,67,53,0.1);border-color:rgba(234,67,53,0.4);color:#f87171}
+.flow-box a{color:inherit;text-decoration:none}
+.flow-arrow{font-size:16px;color:var(--text-muted)}
+.flow-split{display:flex;gap:20px;margin-top:8px}
+
+.dep-graph{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.dep-layer{display:flex;justify-content:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.dep-label{font-size:10px;color:var(--text-muted);text-align:center;margin-bottom:16px;letter-spacing:.5px}
+.dep-node{padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid;text-decoration:none;transition:all .2s;display:inline-block;text-align:center}
+.dep-node:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.dep-node.blue{background:rgba(66,133,244,0.1);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.dep-node.green{background:rgba(52,168,83,0.1);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.dep-node.yellow{background:rgba(251,188,4,0.1);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.dep-node.purple{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.dep-node.cyan{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.dep-node.orange{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.4);color:#fb923c}
+.dep-arrow-row{display:flex;justify-content:center;gap:24px;color:var(--text-muted);font-size:18px;padding:4px 0}
+
+.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.module-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;display:block;text-decoration:none;transition:all .3s ease;position:relative;overflow:hidden}
+.module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--card-color,var(--accent)),transparent);opacity:0;transition:opacity .3s}
+.module-card:hover{background:var(--bg-card-hover);border-color:var(--card-color,#4285f4);transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.3)}
+.module-card:hover::before{opacity:1}
+.card-icon{font-size:28px;margin-bottom:12px}
+.card-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px}
+.card-type{font-size:11px;color:var(--text-muted);font-family:monospace;margin-bottom:10px}
+.card-desc{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.card-tag{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:900px){
+  .sidebar{display:none}
+  .main-content{margin-left:0;padding:20px}
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .hero-title{font-size:28px}
+}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item current">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item">📖 使い方</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item">📚 ナレッジベースサービス</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb">ドキュメントトップ</div>
+    <div class="hero-section">
+      <h1 class="hero-title"><span>Info-Agent</span></h1>
+      <p class="hero-desc">
+        PDFドキュメントをナレッジベースとして活用するAI対話システム。DjangoによるPDFのテキスト抽出・ベクトル埋め込みと、TypeScript/BunのAIエージェントサービスにより、アップロードしたドキュメントを自然言語で照会できます。
+      </p>
+      <div class="badge-row">
+        <span class="badge blue">🐍 Python / Django</span>
+        <span class="badge yellow">⚡ TypeScript / Bun</span>
+        <span class="badge purple">🤖 OpenAI API</span>
+        <span class="badge cyan">🗄️ PostgreSQL + pgvector</span>
+        <span class="badge orange">🐳 Docker Compose</span>
+        <span class="badge green">🔍 sentence-transformers</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-num">2</div>
+      <div class="stat-label">独立サービス</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">384</div>
+      <div class="stat-label">ベクトル次元</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">3</div>
+      <div class="stat-label">LLMツール</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">8</div>
+      <div class="stat-label">最大ツールラウンド</div>
+    </div>
+  </div>
+
+  <div class="section" id="architecture" style="animation-delay:.1s">
+    <h2 class="section-title">🏗️ システムアーキテクチャ</h2>
+    <div class="flow-diagram">
+      <div class="flow-col">
+        <div class="flow-row">
+          <div class="flow-box blue">👤 ユーザー</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">🤖 Agent Service<br><small style="opacity:.7">:3000 (Hono/Bun)</small></div>
+          <div class="flow-arrow">⇄</div>
+          <div class="flow-box yellow">🧠 OpenAI API<br><small style="opacity:.7">gpt-5.4-mini</small></div>
+        </div>
+        <div style="display:flex;padding-left:20px;color:var(--text-muted);font-size:13px;gap:4px;align-items:center;margin:4px 0">
+          <span>↓</span><span style="font-size:11px">Function Calling（search / list / detail）</span>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box green">📚 Knowledge Base API<br><small style="opacity:.7">:8080 (Django)</small></div>
+          <div class="flow-arrow">⇄</div>
+          <div class="flow-box cyan">🗄️ PostgreSQL<br><small style="opacity:.7">:5432 + pgvector</small></div>
+        </div>
+        <div style="display:flex;padding-left:20px;color:var(--text-muted);font-size:13px;gap:4px;align-items:center;margin:4px 0">
+          <span>↑</span><span style="font-size:11px">PDF アップロード → テキスト抽出 → 384次元ベクトル埋め込み → コサイン類似度検索</span>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box orange">📄 PDFドキュメント<br><small style="opacity:.7">ユーザーアップロード</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">⚙️ Processor<br><small style="opacity:.7">pymupdf テキスト抽出</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">🔢 Embedder<br><small style="opacity:.7">MiniLM-L12-v2</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box cyan">💾 pgvector</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="dependencies" style="animation-delay:.2s">
+    <h2 class="section-title">🔗 サービス依存関係</h2>
+    <div class="dep-graph">
+      <div class="dep-label">↓ 依存方向（上位から下位を呼び出す）</div>
+      <div class="dep-layer">
+        <a href="agent-service.html" class="dep-node purple">🤖 AI Agent Service<br><small>Hono + AgentLoop</small></a>
+      </div>
+      <div class="dep-arrow-row">↙ &nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp; ↘</div>
+      <div class="dep-layer">
+        <span class="dep-node blue">🔍 search_knowledge_base</span>
+        <span class="dep-node blue">📋 list_documents</span>
+        <span class="dep-node blue">📄 get_document_detail</span>
+      </div>
+      <div class="dep-arrow-row">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓</div>
+      <div class="dep-layer">
+        <a href="knowledge-base.html" class="dep-node green">📚 Knowledge Base API<br><small>Django REST</small></a>
+      </div>
+      <div class="dep-arrow-row">↙ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↘</div>
+      <div class="dep-layer">
+        <span class="dep-node yellow">🔢 Embedder Service<br><small>MiniLM-L12-v2</small></span>
+        <span class="dep-node cyan">🗄️ PostgreSQL + pgvector<br><small>384次元ベクトル保存</small></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="services" style="animation-delay:.3s">
+    <h2 class="section-title">📦 サービスモジュール</h2>
+    <div class="module-grid">
+      <a href="agent-service.html" class="module-card" style="--card-color:#a855f7">
+        <div class="card-icon">🤖</div>
+        <div class="card-title">AI Agentサービス</div>
+        <div class="card-type">TypeScript / Bun / Hono — :3000</div>
+        <div class="card-desc">Hono Webサービス + AgentLoop。OpenAI Function Callingによってツールループを駆動し、マルチターン会話セッションを管理し、出典ソースを自動付与します。</div>
+        <div class="card-tags">
+          <span class="card-tag">AgentLoop</span>
+          <span class="card-tag">Function Calling</span>
+          <span class="card-tag">Session</span>
+          <span class="card-tag">Hono</span>
+        </div>
+      </a>
+      <a href="knowledge-base.html" class="module-card" style="--card-color:#f97316">
+        <div class="card-icon">📚</div>
+        <div class="card-title">ナレッジベースサービス</div>
+        <div class="card-type">Python / Django — :8080</div>
+        <div class="card-desc">PDFアップロード、テキスト抽出（pymupdf）、ベクトル埋め込み（MiniLM）、pgvectorコサイン類似度検索を提供。REST APIおよびHTMX Web UIを提供します。</div>
+        <div class="card-tags">
+          <span class="card-tag">Django REST</span>
+          <span class="card-tag">pgvector</span>
+          <span class="card-tag">MiniLM</span>
+          <span class="card-tag">HTMX</span>
+        </div>
+      </a>
+      <a href="setup.html" class="module-card" style="--card-color:#06b6d4">
+        <div class="card-icon">🛠️</div>
+        <div class="card-title">環境構築</div>
+        <div class="card-type">Docker Compose + Make</div>
+        <div class="card-desc">Docker ComposeでPostgreSQLを管理し、uvでPython依存関係、BunでNode.js依存関係を管理します。Makeコマンドで全サービスを一括起動できます。</div>
+        <div class="card-tags">
+          <span class="card-tag">Docker</span>
+          <span class="card-tag">uv</span>
+          <span class="card-tag">Bun</span>
+          <span class="card-tag">Makefile</span>
+        </div>
+      </a>
+      <a href="usage.html" class="module-card" style="--card-color:#34a853">
+        <div class="card-icon">📖</div>
+        <div class="card-title">使い方</div>
+        <div class="card-type">Web UI + REST API</div>
+        <div class="card-desc">AI対話インターフェース（:3000）、PDFアップロード管理（:8080）、セマンティック検索、ドキュメントステータス追跡、Django管理画面の操作方法を説明します。</div>
+        <div class="card-tags">
+          <span class="card-tag">Chat UI</span>
+          <span class="card-tag">PDF Upload</span>
+          <span class="card-tag">Semantic Search</span>
+          <span class="card-tag">Admin</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section" id="ports" style="animation-delay:.4s">
+    <h2 class="section-title">🌐 サービスポート一覧</h2>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#0f172a">
+            <th style="padding:12px 16px;text-align:left;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">サービス</th>
+            <th style="padding:12px 16px;text-align:left;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">ポート</th>
+            <th style="padding:12px 16px;text-align:left;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">URL</th>
+            <th style="padding:12px 16px;text-align:left;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">説明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#c084fc;font-weight:600">🤖 AI Agent</span></td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">3000</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">http://localhost:3000</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)">AI対話インターフェース（Chat UI）</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#6ee7a0;font-weight:600">📚 ナレッジベースUI</span></td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">8080</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">http://localhost:8080</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)">PDFアップロード・セマンティック検索 Web UI</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="color:#fcd34d;font-weight:600">⚙️ Django Admin</span></td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">8080</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;color:#7ab4ff">http://localhost:8080/admin/</td>
+            <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)">ドキュメント・Chunk管理（スーパーユーザー必要）</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px"><span style="color:#67e8f9;font-weight:600">🗄️ PostgreSQL</span></td>
+            <td style="padding:12px 16px;font-family:monospace;color:#7ab4ff">5432</td>
+            <td style="padding:12px 16px;font-family:monospace;color:#7ab4ff">localhost:5432</td>
+            <td style="padding:12px 16px;color:var(--text-secondary)">pgvectorベクトルデータベース（Docker）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="quickstart" style="animation-delay:.5s">
+    <h2 class="section-title">⚡ クイックスタート</h2>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px">
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">5つのコマンドで初回セットアップ完了：</p>
+      <div style="position:relative;margin-bottom:0">
+        <span style="position:absolute;top:10px;right:48px;font-family:monospace;font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase">Shell</span>
+        <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+        <pre class="code-block"><span class="code-comment"># 1. 依存関係のインストール</span>
+<span class="code-key">make</span> <span class="code-val">install</span> &amp;&amp; <span class="code-key">make</span> <span class="code-val">agent-install</span>
+
+<span class="code-comment"># 2. OpenAI API Keyを設定</span>
+<span class="code-key">cp</span> agent/.env.example agent/.env
+<span class="code-comment"># agent/.env を編集して OPENAI_API_KEY を設定</span>
+
+<span class="code-comment"># 3. データベース起動とマイグレーション実行</span>
+<span class="code-key">make</span> <span class="code-val">db-start</span> &amp;&amp; <span class="code-key">make</span> <span class="code-val">db-migrate</span>
+
+<span class="code-comment"># 4. 全サービスを起動</span>
+<span class="code-key">make</span> <span class="code-val">dev-all</span>
+
+<span class="code-comment"># 5. ブラウザで確認</span>
+<span class="code-comment"># AI対話：http://localhost:3000</span>
+<span class="code-comment"># ナレッジベース：http://localhost:8080</span></pre>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.3);border-radius:8px;font-size:13px;color:var(--text-secondary)">
+        ⚠️ <strong style="color:#fcd34d">注意：</strong>OpenAI API Keyを事前に取得し、<code style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;color:#7ab4ff">agent/.env</code> に設定していないと、Agentサービスが起動しません。
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--text-primary)}
+.copy-btn.copied{color:#6ee7a0;border-color:rgba(52,168,83,0.4)}
+.code-block{background:#0f172a;border-radius:10px;padding:48px 20px 20px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:0}
+.code-comment{color:#64748b}
+.code-key{color:#c084fc}
+.code-val{color:#6ee7a0}
+.code-str{color:#fbbf24}
+</style>
+<script>
+function copyCode(btn){
+  const pre=btn.closest('div').querySelector('.code-block');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ コピー完了';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='コピー';btn.classList.remove('copied')},2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agentサービス — Info-Agent</title>
+<style>
+:root{--bg-primary:#0a0e1a;--bg-card:#1a2235;--bg-card-hover:#1e2a42;--accent:#a855f7;--accent-light:rgba(168,85,247,0.15);--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e3a5f;--sidebar-width:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(168,85,247,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(168,85,247,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1000px;position:relative;z-index:1}
+.page-header{margin-bottom:36px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+
+.module-hero{display:flex;align-items:flex-start;gap:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px;border-left:3px solid var(--accent)}
+.hero-icon{width:56px;height:56px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.hero-title{font-size:26px;font-weight:800;color:var(--text-primary)}
+.hero-service{font-size:12px;color:var(--accent);font-family:monospace}
+.hero-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+.section{margin-bottom:40px;animation:fadeInUp .5s ease both;scroll-margin-top:20vh}
+.section-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.flow-diagram{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.flow-col{display:flex;flex-direction:column;gap:8px}
+.flow-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.flow-down{text-align:center;color:var(--text-muted);font-size:20px;padding:4px 0;margin-left:20px}
+.flow-box{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;display:flex;align-items:center;gap:8px}
+.flow-box.blue{background:rgba(66,133,244,0.1);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.flow-box.green{background:rgba(52,168,83,0.1);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.flow-box.yellow{background:rgba(251,188,4,0.1);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.flow-box.purple{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.flow-box.orange{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.4);color:#fb923c}
+.flow-box.cyan{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.flow-box.red{background:rgba(234,67,53,0.1);border-color:rgba(234,67,53,0.4);color:#f87171}
+.flow-arrow{font-size:16px;color:var(--text-muted)}
+.flow-arrow.error{color:#f87171}
+
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px}
+.alert-box.info{background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25)}
+.alert-box.tip{background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.25)}
+.alert-box.warn{background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.25)}
+.alert-icon{font-size:18px;flex-shrink:0}
+.alert-content{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.alert-content strong{color:var(--text-primary)}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.info-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-value.code{font-family:monospace;font-size:13px;color:#7ab4ff}
+.info-value.green{color:#6ee7a0}
+.info-value.yellow{color:#fcd34d}
+.info-value.red{color:#f87171}
+
+.item-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:10px}
+.item-name{font-family:monospace;font-size:13px;font-weight:600;color:#7ab4ff;margin-bottom:6px}
+.item-detail{font-size:12px;color:var(--text-secondary);line-height:1.8}
+
+.code-wrap{position:relative;margin-bottom:16px}
+.code-lang{position:absolute;top:8px;left:10px;font-family:monospace;font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--text-primary)}
+.copy-btn.copied{color:#6ee7a0;border-color:rgba(52,168,83,0.4)}
+.code-block{background:#0f172a;border-radius:10px;padding:48px 20px 20px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:0}
+.code-comment{color:#64748b}
+.code-key{color:#c084fc}
+.code-val{color:#6ee7a0}
+.code-str{color:#fbbf24}
+
+.source-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.source-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.source-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.sb-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.sb-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.sb-value.mono{font-family:monospace;font-size:13px;color:#7ab4ff}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:6px;padding:5px 12px;font-family:monospace;font-size:12px;color:#c084fc}
+
+.related-pages{margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.related-title{font-size:13px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.related-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-decoration:none;display:flex;align-items:center;gap:12px;transition:all .2s}
+.related-card:hover{background:var(--bg-card-hover);border-color:var(--accent);transform:translateX(4px)}
+.related-icon{font-size:20px;flex-shrink:0}
+.related-info{flex:1;min-width:0}
+.related-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.related-type{font-size:11px;color:var(--text-muted)}
+
+.prev-next-nav{display:flex;justify-content:space-between;gap:16px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-decoration:none;flex:1;max-width:45%;transition:all .2s}
+.nav-btn:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.nav-btn.next{flex-direction:row-reverse;text-align:right}
+.nav-direction{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.nav-arrow{font-size:20px;color:var(--accent);flex-shrink:0}
+
+code{font-family:'Courier New',monospace;font-size:.85em;background:rgba(255,255,255,0.08);color:#7ab4ff;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sidebar{display:none}.main-content{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item">📖 使い方</a>
+  <div class="sidebar-section">ページ目次</div>
+  <a href="#why" class="toc-item">❓ 設計上の決定</a>
+  <a href="#flow" class="toc-item">🔀 AgentLoopの流れ</a>
+  <a href="#tools" class="toc-item">🔧 ツール一覧</a>
+  <a href="#session" class="toc-item">🗂️ セッション管理</a>
+  <a href="#config" class="toc-item">⚙️ 設定パラメータ</a>
+  <a href="#source" class="toc-item">📁 ファイル構成</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item current">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item">📚 ナレッジベースサービス</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">ホーム</a> › サービス構成 › AI Agentサービス</div>
+    <div class="module-hero">
+      <div class="hero-icon">🤖</div>
+      <div>
+        <div class="hero-title">AI Agentサービス</div>
+        <div class="hero-service">agent/src/ — TypeScript / Bun / Hono — :3000</div>
+        <div class="hero-desc">Hono WebフレームワークをHTTPサーバーとして使用し、AgentLoopがLLM + Function Callingの多ラウンドツールループを駆動します。ユーザーの質問に対し、Agentはナレッジベースをクエリするかどうかを自動で判断し、最終回答には出典が含まれます。</div>
+        <div class="hero-tags">
+          <span class="tag">Hono</span>
+          <span class="tag">AgentLoop</span>
+          <span class="tag">Function Calling</span>
+          <span class="tag">SessionStore</span>
+          <span class="tag">OpenAI SDK</span>
+          <span class="tag">Bun</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="why" style="animation-delay:.1s">
+    <h2 class="section-title">❓ 設計上の決定</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜプロンプト注入（直接RAG検索）ではなくFunction Callingを使うのか？</strong><br>
+        従来のRAGは毎回の対話前に検索してコンテキストを注入しますが、これは文書不要な質問でもトークンを消費します。Function CallingによりLLMが「検索が必要か」「どのキーワードで検索するか」を自律的に判断でき、より効率的かつ正確な検索意図が得られます。
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜ最大ToolRoundsを5ではなく8に設定するのか？</strong><br>
+        多言語クエリのシナリオ（例：日本語文書に中国語で質問）では、Agentが検索キーワードを複数回変更する必要があります（3回検索×往復 = 6+ラウンド）。8に設定することで多言語再検索シナリオに対応しつつ、無限ループを防ぎます。
+      </div>
+    </div>
+    <div class="alert-box tip">
+      <div class="alert-icon">✅</div>
+      <div class="alert-content">
+        <strong>なぜ出典はモデルに依存せず、バックエンドで強制付与するのか？</strong><br>
+        LLMは出典を省略したり、フォーマットが不一致になることがあります。出典付与ロジックを<code>buildSourceBlock()</code>（agent.ts:73）で決定論的に処理することで、検索結果の上位3つの重複のないドキュメント名が必ず回答の末尾に表示されます。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="flow" style="animation-delay:.15s">
+    <h2 class="section-title">🔀 AgentLoopの流れ</h2>
+    <div class="flow-diagram">
+      <div class="flow-col">
+        <div class="flow-row">
+          <div class="flow-box blue">📨 POST /api/chat<br><small style="opacity:.7">{message, sessionId?}</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">🗂️ SessionStore<br><small style="opacity:.7">会話履歴を取得</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box yellow">🧠 LLM.chat()<br><small style="opacity:.7">system+history+user</small></div>
+        </div>
+        <div class="flow-down">↓ tool_callsあり？</div>
+        <div class="flow-row">
+          <div class="flow-box green">✅ ツールを実行（最大8回）</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">🔄 結果をworking[]に追加</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box yellow">LLMを再度呼び出し</div>
+        </div>
+        <div class="flow-down">↓ tool_callsなし（最終回答）</div>
+        <div class="flow-row">
+          <div class="flow-box cyan">📎 buildSourceBlock()<br><small style="opacity:.7">上位3件の重複なし出典を取得</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">💾 セッション更新</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">📤 {answer, sessionId}</div>
+        </div>
+        <div class="flow-row" style="margin-top:8px">
+          <div class="flow-arrow error">↘ 8ラウンド超過</div>
+          <div class="flow-box yellow">ツールなしで強制最終呼び出し</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-arrow error">↘ LLMエラー</div>
+          <div class="flow-box red">❌ 固定エラーメッセージを返す</div>
+        </div>
+      </div>
+    </div>
+    <div class="code-wrap" style="margin-top:16px">
+      <span class="code-lang">TypeScript</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment">// agent/src/agent.ts — AgentLoopのコア（簡略版）</span>
+<span class="code-key">for</span> (<span class="code-key">let</span> round = <span class="code-val">0</span>; round &lt; maxToolRounds; round++) {
+  <span class="code-key">const</span> turn = <span class="code-key">await</span> llm.chat(working, toolSpecs);
+
+  <span class="code-comment">// tool_callsなし → 最終回答</span>
+  <span class="code-key">if</span> (turn.toolCalls.length === <span class="code-val">0</span>) {
+    answer = turn.content;
+    <span class="code-key">break</span>;
+  }
+
+  <span class="code-comment">// tool_callsあり → ツールを実行してループ継続</span>
+  <span class="code-key">for</span> (<span class="code-key">const</span> tc <span class="code-key">of</span> turn.toolCalls) {
+    <span class="code-key">const</span> result = <span class="code-key">await</span> runToolCall(tc);
+    <span class="code-comment">// 検索結果を累積し、後で出典生成に使用</span>
+    <span class="code-key">if</span> (tc.name === <span class="code-str">"search_knowledge_base"</span> &amp;&amp; result.ok) {
+      sources.push(...result.data);
+    }
+    working.push({ role: <span class="code-str">"tool"</span>, toolCallId: tc.id, content: JSON.stringify(result.data) });
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="section" id="tools" style="animation-delay:.2s">
+    <h2 class="section-title">🔧 LLMツール一覧</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">🔑</div>
+      <div class="alert-content">
+        LLMはOpenAI Function Calling仕様に従い、呼び出すツールを自動的に決定します。ツールは<code>agent/src/tools/registry.ts</code>で定義され、すべてのツールは<code>kbClient</code>を通じてDjango REST APIを呼び出します。
+      </div>
+    </div>
+    <div class="item-card">
+      <div class="item-name">search_knowledge_base</div>
+      <div class="item-detail">
+        <strong style="color:var(--text-primary)">機能：</strong>クエリワードに基づきベクトル類似度検索を行い、最も関連性の高いChunkリストを返す<br>
+        <strong style="color:var(--text-primary)">パラメータ：</strong><code>query</code>（文字列）、<code>category</code>（省略可、ドキュメント分類）<br>
+        <strong style="color:var(--text-primary)">呼び出し：</strong><code>GET /api/search/?q={query}&amp;category={category}</code><br>
+        <strong style="color:var(--text-primary)">後処理：</strong>返却結果を距離閾値<code>SEARCH_MAX_DISTANCE</code>でフィルタリング
+      </div>
+    </div>
+    <div class="item-card">
+      <div class="item-name">list_documents</div>
+      <div class="item-detail">
+        <strong style="color:var(--text-primary)">機能：</strong>ナレッジベース内の全ドキュメントリストを取得<br>
+        <strong style="color:var(--text-primary)">パラメータ：</strong>なし<br>
+        <strong style="color:var(--text-primary)">呼び出し：</strong><code>GET /api/documents/</code><br>
+        <strong style="color:var(--text-primary)">用途：</strong>ユーザーが「どんな文書がありますか」と聞いた際に呼び出される
+      </div>
+    </div>
+    <div class="item-card">
+      <div class="item-name">get_document_detail</div>
+      <div class="item-detail">
+        <strong style="color:var(--text-primary)">機能：</strong>特定ドキュメントの詳細情報を取得<br>
+        <strong style="color:var(--text-primary)">パラメータ：</strong><code>document_id</code>（数値）<br>
+        <strong style="color:var(--text-primary)">呼び出し：</strong><code>GET /api/documents/{id}/</code><br>
+        <strong style="color:var(--text-primary)">用途：</strong>通常list_documentsの後、ユーザーが特定ドキュメントの確認を要求した際に呼び出される
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="session" style="animation-delay:.25s">
+    <h2 class="section-title">🗂️ セッション管理（SessionStore）</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜデータベースではなくメモリにセッションを保存するのか？</strong><br>
+        このプロジェクトは開発/デモ用途のため、メモリ保存で十分です。複数ユーザーのセッションを永続化する場合はRedisまたはデータベース保存に変更が必要です。現在はサービス再起動後、すべての会話履歴が消去されます。
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">セッションID生成</div>
+        <div class="info-value code">crypto.randomUUID()</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">保存方式</div>
+        <div class="info-value yellow">メモリ（Map）</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">永続化</div>
+        <div class="info-value red">サービス再起動で消去</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">セッションファイル</div>
+        <div class="info-value code">agent/src/session.ts</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:16px">
+      フロントエンドは最初の対話後に<code>sessionId</code>を受け取り、以降のリクエストに同じIDを含めることで会話履歴が継続されます。<code>sessionId</code>を含めない場合、サーバーが自動的に新しいセッションを作成します。
+    </p>
+  </div>
+
+  <div class="section" id="config" style="animation-delay:.3s">
+    <h2 class="section-title">⚙️ 設定パラメータ（Config）</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">LLMモデル</div>
+        <div class="info-value code">gpt-5.4-mini</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">最大ツールラウンド数</div>
+        <div class="info-value code">8</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">最大出典Chunk数</div>
+        <div class="info-value code">3</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">検索距離閾値</div>
+        <div class="info-value code">1.0（デフォルト）</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">HTTPフレームワーク</div>
+        <div class="info-value code">Hono</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">デフォルトポート</div>
+        <div class="info-value code">3000</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="source" style="animation-delay:.35s">
+    <h2 class="section-title">📁 ファイル構成</h2>
+    <div class="source-card">
+      <div class="source-row">
+        <div class="source-block">
+          <div class="sb-label">エントリポイント</div>
+          <div class="sb-value mono">agent/src/index.ts</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">AgentLoopコア</div>
+          <div class="sb-value mono">agent/src/agent.ts</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">LLMクライアント</div>
+          <div class="sb-value mono">agent/src/llm.ts</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">ツールレジストリ</div>
+          <div class="sb-value mono">agent/src/tools/registry.ts</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">設定読み込み</div>
+          <div class="sb-value mono">agent/src/config.ts</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">セッション管理</div>
+          <div class="sb-value mono">agent/src/session.ts</div>
+        </div>
+      </div>
+      <div>
+        <div class="sb-label" style="margin-bottom:10px">主要エクスポート</div>
+        <div class="tag-list">
+          <span class="tag-item">createAgentLoop()</span>
+          <span class="tag-item">createApp()</span>
+          <span class="tag-item">loadConfig()</span>
+          <span class="tag-item">createSessionStore()</span>
+          <span class="tag-item">createLLMClient()</span>
+          <span class="tag-item">createToolRegistry()</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="related-pages">
+    <div class="related-title">🔗 関連ページ</div>
+    <div class="related-grid">
+      <a href="knowledge-base.html" class="related-card">
+        <div class="related-icon">📚</div>
+        <div class="related-info">
+          <div class="related-name">ナレッジベースサービス</div>
+          <div class="related-type">Django REST + pgvector</div>
+        </div>
+      </a>
+      <a href="usage.html" class="related-card">
+        <div class="related-icon">💬</div>
+        <div class="related-info">
+          <div class="related-name">使い方</div>
+          <div class="related-type">AI対話操作ガイド</div>
+        </div>
+      </a>
+      <a href="setup.html" class="related-card">
+        <div class="related-icon">🔑</div>
+        <div class="related-info">
+          <div class="related-name">環境変数設定</div>
+          <div class="related-type">OPENAI_API_KEY等の設定</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="prev-next-nav">
+    <a href="usage.html" class="nav-btn prev">
+      <div class="nav-arrow">←</div>
+      <div><div class="nav-direction">前のページ</div><div class="nav-title">使い方</div></div>
+    </a>
+    <a href="knowledge-base.html" class="nav-btn next">
+      <div><div class="nav-direction">次のページ</div><div class="nav-title">ナレッジベースサービス</div></div>
+      <div class="nav-arrow">→</div>
+    </a>
+  </div>
+</main>
+<script>
+function copyCode(btn){
+  const pre=btn.closest('.code-wrap').querySelector('.code-block');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ コピー完了';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='コピー';btn.classList.remove('copied')},2000);
+  });
+}
+const items=document.querySelectorAll('.toc-item[href^="#"]');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const t=document.querySelector(`.toc-item[href="#${e.target.id}"]`);
+      if(t)t.classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('[id]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>

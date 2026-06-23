@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>環境構築 — Info-Agent</title>
+<style>
+:root{--bg-primary:#0a0e1a;--bg-card:#1a2235;--bg-card-hover:#1e2a42;--accent:#06b6d4;--accent-light:rgba(6,182,212,0.15);--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e3a5f;--sidebar-width:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(6,182,212,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(6,182,212,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1000px;position:relative;z-index:1}
+.page-header{margin-bottom:36px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+
+.module-hero{display:flex;align-items:flex-start;gap:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px;border-left:3px solid var(--accent)}
+.hero-icon{width:56px;height:56px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.hero-title{font-size:26px;font-weight:800;color:var(--text-primary)}
+.hero-service{font-size:12px;color:var(--accent);font-family:monospace}
+.hero-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+.section{margin-bottom:36px;animation:fadeInUp .5s ease both;scroll-margin-top:20vh}
+.section-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.step-list{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:20px;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;left:19px;top:44px;bottom:0;width:2px;background:linear-gradient(to bottom,var(--border),transparent)}
+.step-num{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:var(--accent-light);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--accent)}
+.step-body{padding:8px 0 28px}
+.step-title{font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px}
+.step-detail{font-size:13px;color:var(--text-secondary);line-height:1.7}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.info-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-value.code{font-family:monospace;font-size:13px;color:#7ab4ff}
+
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px}
+.alert-box.info{background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25)}
+.alert-box.tip{background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.25)}
+.alert-box.warn{background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.25)}
+.alert-icon{font-size:18px;flex-shrink:0}
+.alert-content{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.alert-content strong{color:var(--text-primary)}
+
+.code-wrap{position:relative;margin-bottom:16px}
+.code-lang{position:absolute;top:8px;left:10px;font-family:monospace;font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--text-primary)}
+.copy-btn.copied{color:#6ee7a0;border-color:rgba(52,168,83,0.4)}
+.code-block{background:#0f172a;border-radius:10px;padding:48px 20px 20px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:0}
+.code-comment{color:#64748b}
+.code-key{color:#c084fc}
+.code-val{color:#6ee7a0}
+.code-str{color:#fbbf24}
+
+.data-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:16px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{background:#0f172a;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)}
+.data-table tr:nth-child(even) td{background:rgba(255,255,255,0.015)}
+.data-table tr:hover td{background:rgba(255,255,255,0.03)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table .mono{font-family:monospace;color:#7ab4ff}
+.data-table .green{color:#6ee7a0}
+.data-table .yellow{color:#fcd34d}
+.data-table .red{color:#f87171}
+
+.prev-next-nav{display:flex;justify-content:space-between;gap:16px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-decoration:none;flex:1;max-width:45%;transition:all .2s}
+.nav-btn:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.nav-btn.next{flex-direction:row-reverse;text-align:right}
+.nav-btn.disabled{opacity:.3;pointer-events:none}
+.nav-direction{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.nav-arrow{font-size:20px;color:var(--accent);flex-shrink:0}
+
+code{font-family:'Courier New',monospace;font-size:.85em;background:rgba(255,255,255,0.08);color:#7ab4ff;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sidebar{display:none}.main-content{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item current">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item">📖 使い方</a>
+  <div class="sidebar-section">ページ目次</div>
+  <a href="#prerequisites" class="toc-item">📋 前提条件</a>
+  <a href="#installation" class="toc-item">⚙️ インストール手順</a>
+  <a href="#env-config" class="toc-item">🔑 環境変数</a>
+  <a href="#commands" class="toc-item">🛠️ Makeコマンド</a>
+  <a href="#troubleshooting" class="toc-item">🔧 トラブルシューティング</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item">📚 ナレッジベースサービス</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">トップ</a> › 環境構築</div>
+    <div class="module-hero">
+      <div class="hero-icon">🛠️</div>
+      <div>
+        <div class="hero-title">開発環境の構築</div>
+        <div class="hero-service">Docker Compose + uv + Bun + Make</div>
+        <div class="hero-desc">Info-Agentの開発環境をゼロから構築する手順です。PostgreSQL（pgvector）コンテナの起動、Python/Node依存関係のインストール、環境変数の設定、すべてのMakefileコマンドについて説明します。</div>
+        <div class="hero-tags">
+          <span class="tag">Docker Desktop</span>
+          <span class="tag">uv</span>
+          <span class="tag">Bun</span>
+          <span class="tag">Make</span>
+          <span class="tag">OpenAI API Key 必須</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="prerequisites" style="animation-delay:.1s">
+    <h2 class="section-title">📋 前提条件</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜ pip ではなく uv を使うのか？</strong><br>
+        uvはRustで実装されたPythonパッケージ管理ツールで、依存関係の解決速度がpipより10〜100倍高速で、仮想環境の管理も内蔵しています。本プロジェクトではuvを使って開発環境の一貫性を確保しています。
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">コンテナ管理</div>
+        <div class="info-value">Docker Desktop</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Pythonパッケージ管理</div>
+        <div class="info-value code">uv</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Node.js実行環境</div>
+        <div class="info-value code">Bun</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">OpenAI API</div>
+        <div class="info-value" style="color:#f87171">API Key 必須</div>
+      </div>
+    </div>
+    <div class="data-table-wrap" style="margin-top:16px">
+      <table class="data-table">
+        <thead><tr><th>ツール</th><th>バージョン要件</th><th>インストール方法</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Docker Desktop</td><td>最新版</td><td>公式サイトからダウンロード</td><td>PostgreSQL + pgvectorコンテナ</td></tr>
+          <tr><td class="mono">uv</td><td>0.4+</td><td><code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></td><td>Python仮想環境・依存関係管理</td></tr>
+          <tr><td class="mono">Bun</td><td>1.x</td><td><code>curl -fsSL https://bun.sh/install | bash</code></td><td>TypeScript実行・Nodeパッケージ管理</td></tr>
+          <tr><td class="mono">Make</td><td>任意</td><td>macOS標準搭載</td><td>開発コマンドの簡略化</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="installation" style="animation-delay:.15s">
+    <h2 class="section-title">⚙️ インストール手順</h2>
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">リポジトリのクローン</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-key">git clone</span> <span class="code-str">https://github.com/haya790315/Info-Agent.git</span>
+<span class="code-key">cd</span> Info-Agent</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Python依存関係のインストール</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-key">make</span> <span class="code-val">install</span>
+<span class="code-comment"># .venv/ を作成し requirements.txt の全パッケージをインストール</span>
+<span class="code-comment"># 初回実行時は sentence-transformers モデル（約90MB）をダウンロード</span></pre>
+            </div>
+            <div class="alert-box warn" style="margin-top:8px">
+              <div class="alert-icon">⚠️</div>
+              <div class="alert-content">初回インストール時、<code>sentence-transformers</code> が <strong>paraphrase-multilingual-MiniLM-L12-v2</strong> モデル（約90MB）を自動ダウンロードします。安定したネットワーク接続を確認してください。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Node.js依存関係のインストール（Bun）</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-key">make</span> <span class="code-val">agent-install</span>
+<span class="code-comment"># cd agent && bun install と同等</span>
+<span class="code-comment"># agent/node_modules/ に Hono、OpenAI SDK などをインストール</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">環境変数の設定</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-key">cp</span> agent/.env.example agent/.env
+<span class="code-comment"># agent/.env を編集して必要な API Key を入力</span></pre>
+            </div>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:8px">詳細な環境変数の説明は下の <a href="#env-config" style="color:var(--accent)">環境変数の設定</a> セクションをご参照ください。</p>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">データベースの起動とマイグレーション実行</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-comment"># PostgreSQLコンテナ起動 + pgvector拡張機能の有効化</span>
+<span class="code-key">make</span> <span class="code-val">db-start</span>
+
+<span class="code-comment"># Djangoデータベース構造の作成（Document + Chunkテーブル）</span>
+<span class="code-key">make</span> <span class="code-val">db-migrate</span></pre>
+            </div>
+            <div class="alert-box tip">
+              <div class="alert-icon">✅</div>
+              <div class="alert-content"><code>db-start</code> コマンドはPostgreSQLの準備が完了するまで待機した後、<code>CREATE EXTENSION IF NOT EXISTS vector</code> を自動実行します。pgvectorを手動で有効化する必要はありません。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-title">全サービスの起動</div>
+          <div class="step-detail">
+            <div class="code-wrap">
+              <span class="code-lang">Shell</span>
+              <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+              <pre class="code-block"><span class="code-comment"># Django (:8080) + Bun Agent (:3000) を同時起動</span>
+<span class="code-key">make</span> <span class="code-val">dev-all</span>
+<span class="code-comment"># Ctrl+C で両サービスを同時停止できます</span></pre>
+            </div>
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:12px">
+                <div style="font-size:11px;color:#c084fc;font-family:monospace;margin-bottom:4px">AI対話インターフェース</div>
+                <div style="font-size:14px;color:var(--text-primary);font-family:monospace">http://localhost:3000</div>
+              </div>
+              <div style="background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.3);border-radius:8px;padding:12px">
+                <div style="font-size:11px;color:#6ee7a0;font-family:monospace;margin-bottom:4px">ナレッジベース Web UI</div>
+                <div style="font-size:14px;color:var(--text-primary);font-family:monospace">http://localhost:8080</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="env-config" style="animation-delay:.2s">
+    <h2 class="section-title">🔑 環境変数の設定（<code>agent/.env</code>）</h2>
+    <div class="alert-box warn">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content"><strong>OPENAI_API_KEY</strong> が唯一の必須項目です。その他の変数はすべて合理的なデフォルト値を持っており、初回起動にはAPI Keyの設定だけで十分です。</div>
+    </div>
+    <div class="code-wrap">
+      <span class="code-lang">dotenv</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment"># ============ 必須 ============</span>
+<span class="code-key">OPENAI_API_KEY</span>=<span class="code-str">sk-...</span>            <span class="code-comment"># OpenAI APIキー（必須）</span>
+
+<span class="code-comment"># ============ 任意（デフォルト値あり）============</span>
+<span class="code-key">OPENAI_MODEL</span>=<span class="code-str">gpt-5.4-mini</span>       <span class="code-comment"># 使用するLLMモデル</span>
+<span class="code-key">OPENAI_BASE_URL</span>=                    <span class="code-comment"># カスタムAPIエンドポイント（空=OpenAI公式）</span>
+<span class="code-key">KB_API_BASE_URL</span>=<span class="code-str">http://localhost:8080</span>  <span class="code-comment"># DjangoナレッジベースAPIのアドレス</span>
+<span class="code-key">SEARCH_MAX_DISTANCE</span>=<span class="code-str">1.0</span>           <span class="code-comment"># ベクトル検索距離の閾値（0=完全一致、2=反対）</span></pre>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>変数名</th><th>必須</th><th>デフォルト値</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">OPENAI_API_KEY</td><td class="red">必須</td><td>—</td><td>OpenAI APIキー、Agent起動時に検証</td></tr>
+          <tr><td class="mono">OPENAI_MODEL</td><td class="green">任意</td><td class="mono">gpt-5.4-mini</td><td>LLM推論モデル名</td></tr>
+          <tr><td class="mono">OPENAI_BASE_URL</td><td class="green">任意</td><td>空（公式API）</td><td>OpenAI互換エンドポイント（ローカルLLMなど）</td></tr>
+          <tr><td class="mono">KB_API_BASE_URL</td><td class="yellow">推奨</td><td class="mono">http://localhost:8080</td><td>DjangoナレッジベースREST APIのアドレス</td></tr>
+          <tr><td class="mono">SEARCH_MAX_DISTANCE</td><td class="green">任意</td><td class="mono">1.0</td><td>コサイン距離の上限（小さいほど厳格）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content"><strong>SEARCH_MAX_DISTANCE の調整目安：</strong><br>
+      デフォルトの <code>1.0</code> はすべての検索結果を受け入れます（コサイン距離 0〜2）。Agentが関連性の低い内容を返す場合は <code>0.5</code> に下げて検索を厳格化してみてください。検索結果が少なすぎる場合は <code>1.2</code> に上げると改善されます。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="commands" style="animation-delay:.25s">
+    <h2 class="section-title">🛠️ Makefileコマンド一覧</h2>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>コマンド</th><th>説明</th><th>備考</th></tr></thead>
+        <tbody>
+          <tr>
+            <td colspan="3" style="background:#0f172a;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.5px;padding:8px 16px">データベース操作</td>
+          </tr>
+          <tr><td class="mono">make db-start</td><td>Docker PostgreSQL起動 + pgvector有効化</td><td style="color:#6ee7a0">最頻出</td></tr>
+          <tr><td class="mono">make db-stop</td><td>PostgreSQLコンテナの停止</td><td>—</td></tr>
+          <tr><td class="mono">make db-reset</td><td>コンテナとデータボリュームを削除（<strong style="color:#f87171">全データ消去</strong>）</td><td style="color:#f87171">不可逆</td></tr>
+          <tr><td class="mono">make db-logs</td><td>データベースログのリアルタイム確認</td><td>—</td></tr>
+          <tr>
+            <td colspan="3" style="background:#0f172a;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.5px;padding:8px 16px">インストール</td>
+          </tr>
+          <tr><td class="mono">make install</td><td>Python venv作成 + 依存関係インストール</td><td>初回必須</td></tr>
+          <tr><td class="mono">make db-migrate</td><td>DjangoマイグレーションRUN</td><td>初回必須</td></tr>
+          <tr><td class="mono">make superuser</td><td>Django管理画面のアカウント作成</td><td>任意</td></tr>
+          <tr><td class="mono">make agent-install</td><td>Bun / Nodeパッケージのインストール</td><td>初回必須</td></tr>
+          <tr>
+            <td colspan="3" style="background:#0f172a;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.5px;padding:8px 16px">開発サーバー</td>
+          </tr>
+          <tr><td class="mono">make dev-all</td><td>Django(:8080) + Agent(:3000) を同時起動</td><td style="color:#6ee7a0">推奨</td></tr>
+          <tr><td class="mono">make server</td><td>Djangoバックエンドのみ起動</td><td>—</td></tr>
+          <tr><td class="mono">make agent</td><td>Bun Agentのみ起動</td><td>—</td></tr>
+          <tr>
+            <td colspan="3" style="background:#0f172a;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.5px;padding:8px 16px">テスト・メンテナンス</td>
+          </tr>
+          <tr><td class="mono">make test</td><td>Djangoユニットテスト実行（SQLiteメモリ、Docker不要）</td><td>CI対応</td></tr>
+          <tr><td class="mono">make reembed</td><td>全ChunkのベクトルをReGenerateし直す</td><td>モデル変更後に実行</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="troubleshooting" style="animation-delay:.3s">
+    <h2 class="section-title">🔧 よくある問題と解決方法</h2>
+    <div class="alert-box warn">
+      <div class="alert-icon">🐳</div>
+      <div class="alert-content"><strong>make db-start が失敗する：コンテナが起動しない</strong><br>
+      Docker Desktopが起動・実行中であることを確認してください。<code>docker info</code> でステータスを確認できます。
+      </div>
+    </div>
+    <div class="alert-box warn">
+      <div class="alert-icon">🗄️</div>
+      <div class="alert-content"><strong>make db-migrate で接続エラー</strong><br>
+      先に <code>make db-start</code> を実行してPostgreSQLコンテナを起動してからマイグレーションを実行してください。
+      </div>
+    </div>
+    <div class="alert-box warn">
+      <div class="alert-icon">🤖</div>
+      <div class="alert-content"><strong>Agentが「API key not found」を返す</strong><br>
+      <code>agent/.env</code> に <code>OPENAI_API_KEY</code> が正しく設定されていること、キーに余分なスペースがないことを確認してください。
+      </div>
+    </div>
+    <div class="alert-box warn">
+      <div class="alert-icon">📄</div>
+      <div class="alert-content"><strong>PDFアップロード後に検索結果が出ない</strong><br>
+      PDFの処理には数秒かかります。ドキュメント一覧で「処理完了」のステータスになってから検索してください。画像型（スキャン）PDFはテキスト抽出できないため「処理失敗」と表示されます。
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">🔄</div>
+      <div class="alert-content"><strong>埋め込みモデル変更後に検索結果が異常になる</strong><br>
+      sentence-transformersのモデルを変更すると、既存の384次元ベクトルと新モデルの出力が互換しなくなります。<code>make reembed</code> を実行して全ChunkのベクトルをReGenerate計算してください。
+      </div>
+    </div>
+  </div>
+
+  <div class="prev-next-nav">
+    <a href="index.html" class="nav-btn prev">
+      <div class="nav-arrow">←</div>
+      <div><div class="nav-direction">前のページ</div><div class="nav-title">システム概要</div></div>
+    </a>
+    <a href="usage.html" class="nav-btn next">
+      <div><div class="nav-direction">次のページ</div><div class="nav-title">使い方</div></div>
+      <div class="nav-arrow">→</div>
+    </a>
+  </div>
+</main>
+<script>
+function copyCode(btn){
+  const pre=btn.closest('.code-wrap').querySelector('.code-block');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ コピー完了';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='コピー';btn.classList.remove('copied')},2000);
+  });
+}
+const items=document.querySelectorAll('.toc-item[href^="#"]');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const t=document.querySelector(`.toc-item[href="#${e.target.id}"]`);
+      if(t)t.classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('[id]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>

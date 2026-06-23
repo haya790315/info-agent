@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ナレッジベースサービス — Info-Agent</title>
+<style>
+:root{--bg-primary:#0a0e1a;--bg-card:#1a2235;--bg-card-hover:#1e2a42;--accent:#f97316;--accent-light:rgba(249,115,22,0.15);--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e3a5f;--sidebar-width:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(249,115,22,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(249,115,22,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1000px;position:relative;z-index:1}
+.page-header{margin-bottom:36px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+
+.module-hero{display:flex;align-items:flex-start;gap:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px;border-left:3px solid var(--accent)}
+.hero-icon{width:56px;height:56px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.hero-title{font-size:26px;font-weight:800;color:var(--text-primary)}
+.hero-service{font-size:12px;color:var(--accent);font-family:monospace}
+.hero-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+.section{margin-bottom:40px;animation:fadeInUp .5s ease both;scroll-margin-top:20vh}
+.section-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.flow-diagram{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.flow-col{display:flex;flex-direction:column;gap:8px}
+.flow-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.flow-down{text-align:center;color:var(--text-muted);font-size:20px;padding:4px 0;margin-left:20px}
+.flow-box{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;display:flex;align-items:center;gap:8px}
+.flow-box.blue{background:rgba(66,133,244,0.1);border-color:rgba(66,133,244,0.4);color:#7ab4ff}
+.flow-box.green{background:rgba(52,168,83,0.1);border-color:rgba(52,168,83,0.4);color:#6ee7a0}
+.flow-box.yellow{background:rgba(251,188,4,0.1);border-color:rgba(251,188,4,0.4);color:#fcd34d}
+.flow-box.purple{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.4);color:#c084fc}
+.flow-box.orange{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.4);color:#fb923c}
+.flow-box.cyan{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+.flow-box.red{background:rgba(234,67,53,0.1);border-color:rgba(234,67,53,0.4);color:#f87171}
+.flow-arrow{font-size:16px;color:var(--text-muted)}
+.flow-arrow.error{color:#f87171}
+
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px}
+.alert-box.info{background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25)}
+.alert-box.tip{background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.25)}
+.alert-box.warn{background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.25)}
+.alert-icon{font-size:18px;flex-shrink:0}
+.alert-content{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.alert-content strong{color:var(--text-primary)}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.info-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-value.code{font-family:monospace;font-size:13px;color:#7ab4ff}
+.info-value.green{color:#6ee7a0}
+.info-value.yellow{color:#fcd34d}
+.info-value.red{color:#f87171}
+
+.data-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:16px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{background:#0f172a;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)}
+.data-table tr:nth-child(even) td{background:rgba(255,255,255,0.015)}
+.data-table tr:hover td{background:rgba(255,255,255,0.03)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table .mono{font-family:monospace;color:#7ab4ff}
+.data-table .green{color:#6ee7a0}
+.data-table .yellow{color:#fcd34d}
+.data-table .red{color:#f87171}
+
+.api-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.api-table{width:100%;border-collapse:collapse;font-size:13px}
+.api-table th{background:#0f172a;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.api-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+.api-table tr:last-child td{border-bottom:none}
+.api-table tr:hover td{background:rgba(255,255,255,0.02)}
+.api-table .path{font-family:monospace;color:#c084fc}
+.api-table .desc{color:var(--text-secondary);font-size:12px}
+.method-badge{display:inline-block;font-family:monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;min-width:52px;text-align:center;letter-spacing:.5px}
+.method-get{background:rgba(52,168,83,0.15);color:#6ee7a0;border:1px solid rgba(52,168,83,0.4)}
+.method-post{background:rgba(66,133,244,0.15);color:#7ab4ff;border:1px solid rgba(66,133,244,0.4)}
+
+.code-wrap{position:relative;margin-bottom:16px}
+.code-lang{position:absolute;top:8px;left:10px;font-family:monospace;font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:rgba(255,255,255,0.12);color:var(--text-primary)}
+.copy-btn.copied{color:#6ee7a0;border-color:rgba(52,168,83,0.4)}
+.code-block{background:#0f172a;border-radius:10px;padding:48px 20px 20px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;white-space:pre;margin:0}
+.code-comment{color:#64748b}
+.code-key{color:#c084fc}
+.code-val{color:#6ee7a0}
+.code-str{color:#fbbf24}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare-card{border-radius:10px;padding:18px;border:1px solid}
+.compare-card.blue{background:rgba(66,133,244,0.07);border-color:rgba(66,133,244,0.3)}
+.compare-card.green{background:rgba(52,168,83,0.07);border-color:rgba(52,168,83,0.3)}
+.compare-title{font-size:13px;font-weight:600;margin-bottom:12px}
+.compare-item{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px}
+.compare-item:last-child{border-bottom:none}
+.compare-key{color:var(--text-muted)}
+.compare-val{font-family:monospace;font-weight:600}
+
+.source-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.source-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.source-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.sb-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.sb-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.sb-value.mono{font-family:monospace;font-size:13px;color:#7ab4ff}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:6px;padding:5px 12px;font-family:monospace;font-size:12px;color:#c084fc}
+
+.related-pages{margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.related-title{font-size:13px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.related-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-decoration:none;display:flex;align-items:center;gap:12px;transition:all .2s}
+.related-card:hover{background:var(--bg-card-hover);border-color:var(--accent);transform:translateX(4px)}
+.related-icon{font-size:20px;flex-shrink:0}
+.related-info{flex:1;min-width:0}
+.related-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.related-type{font-size:11px;color:var(--text-muted)}
+
+.prev-next-nav{display:flex;justify-content:space-between;gap:16px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-decoration:none;flex:1;max-width:45%;transition:all .2s}
+.nav-btn:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.nav-btn.next{flex-direction:row-reverse;text-align:right}
+.nav-btn.disabled{opacity:.3;pointer-events:none}
+.nav-direction{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.nav-arrow{font-size:20px;color:var(--accent);flex-shrink:0}
+
+code{font-family:'Courier New',monospace;font-size:.85em;background:rgba(255,255,255,0.08);color:#7ab4ff;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sidebar{display:none}.main-content{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item">📖 使い方</a>
+  <div class="sidebar-section">ページ目次</div>
+  <a href="#why" class="toc-item">❓ 設計上の決定</a>
+  <a href="#flow" class="toc-item">🔀 処理パイプライン</a>
+  <a href="#models" class="toc-item">🗄️ データモデル</a>
+  <a href="#chunking" class="toc-item">✂️ チャンク戦略</a>
+  <a href="#embedding" class="toc-item">🔢 ベクトル埋め込み</a>
+  <a href="#search" class="toc-item">🔍 検索サービス</a>
+  <a href="#api" class="toc-item">🌐 REST API</a>
+  <a href="#source" class="toc-item">📁 ファイル構成</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item current">📚 ナレッジベースサービス</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">ホーム</a> › サービス構成 › ナレッジベースサービス</div>
+    <div class="module-hero">
+      <div class="hero-icon">📚</div>
+      <div>
+        <div class="hero-title">ナレッジベースサービス</div>
+        <div class="hero-service">knowledge_base/ — Python / Django 6.0 — :8080</div>
+        <div class="hero-desc">PDFドキュメントの完全な処理パイプライン：pymupdfテキスト抽出 → 分類戦略によるチャンク分割 → sentence-transformersベクトル埋め込み → pgvectorによるコサイン類似度検索と保存、さらにREST APIとHTMX Web UIも提供します。</div>
+        <div class="hero-tags">
+          <span class="tag">Django REST</span>
+          <span class="tag">pgvector</span>
+          <span class="tag">sentence-transformers</span>
+          <span class="tag">pymupdf</span>
+          <span class="tag">HTMX</span>
+          <span class="tag">PostgreSQL 17</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="why" style="animation-delay:.1s">
+    <h2 class="section-title">❓ 設計上の決定</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜPinecone/Weaviateなどのベクトルデータベースではなくpgvectorを使うのか？</strong><br>
+        このプロジェクトはすでにPostgreSQLでDocumentメタデータを保存しているため、pgvectorを使えばベクトル検索とメタデータクエリを同一データベースで完結でき、独立したベクトルDBサービスの追加管理が不要となり、アーキテクチャの複雑さとコストを削減できます。
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜOpenAI Embeddingsではなくparaphrasemultilingual-MiniLM-L12-v2を使うのか？</strong><br>
+        ローカルで実行できる埋め込みモデルのため、APIコストが不要で、多言語（日本語文書・中国語クエリ）にも対応しています。384次元で十分な意味類似性を捉えられ、外部API呼び出しよりも推論速度が高速です。
+      </div>
+    </div>
+    <div class="alert-box tip">
+      <div class="alert-icon">✅</div>
+      <div class="alert-content">
+        <strong>カテゴリ別チャンクサイズの設計原則</strong><br>
+        職歴書などの短い項目は小さなChunk（400文字）を使用し、各Chunkが単一スキルや職歴を表すため検索精度が高くなります。技術資料などの長い説明は大きなChunk（1000文字）を使用し、より完全なコンテキストを保持して断片的な情報の検索を防ぎます。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="flow" style="animation-delay:.15s">
+    <h2 class="section-title">🔀 PDF処理パイプライン</h2>
+    <div class="flow-diagram">
+      <div class="flow-col">
+        <div class="flow-row">
+          <div class="flow-box orange">📄 PDFアップロード（HTTP POST）</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box yellow">⏳ Document作成<br><small style="opacity:.7">status=pending</small></div>
+        </div>
+        <div class="flow-down">↓ UploadView 同期処理</div>
+        <div class="flow-row">
+          <div class="flow-box yellow">⚙️ status=processing</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">📑 extract_text()<br><small style="opacity:.7">pymupdf全ページテキスト結合</small></div>
+        </div>
+        <div class="flow-down">↓ テキストが空でない場合</div>
+        <div class="flow-row">
+          <div class="flow-box blue">✂️ split_into_chunks()<br><small style="opacity:.7">分類に応じたsize/overlapを決定</small></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box purple">🔢 Embedder.embed()<br><small style="opacity:.7">MiniLM → 384次元ベクトル</small></div>
+        </div>
+        <div class="flow-down">↓</div>
+        <div class="flow-row">
+          <div class="flow-box cyan">💾 Chunk.objects.bulk_create()</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-box green">✅ status=complete<br><small style="opacity:.7">chunk_count更新</small></div>
+        </div>
+        <div class="flow-row" style="margin-top:8px">
+          <div class="flow-arrow error">↘ テキストが空（画像型PDF）</div>
+          <div class="flow-box red">❌ status=failed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="models" style="animation-delay:.2s">
+    <h2 class="section-title">🗄️ データモデル</h2>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">2つのコアModel：<code>Document</code>（ドキュメントメタデータ＋ステータス）と<code>Chunk</code>（テキストブロック＋384次元ベクトル）。</p>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:700;color:#fb923c;margin-bottom:12px;font-family:monospace">📄 Document</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>フィールド</th><th>型</th><th>説明</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">filename</td><td class="mono">CharField(255)</td><td>元のPDFファイル名</td></tr>
+            <tr><td class="mono">category</td><td class="mono">CharField(64)</td><td>ドキュメント分類（resume/manual/policy/technical/report/other）</td></tr>
+            <tr><td class="mono">file</td><td class="mono">FileField</td><td>元PDFの保存パス（<code>pdfs/{category}/{filename}</code>）</td></tr>
+            <tr><td class="mono">uploaded_at</td><td class="mono">DateTimeField</td><td>アップロード日時（auto_now_add）</td></tr>
+            <tr><td class="mono">status</td><td class="mono">CharField(20)</td><td>pending / processing / complete / failed</td></tr>
+            <tr><td class="mono">error_message</td><td class="mono">TextField</td><td>失敗時のエラーメッセージ</td></tr>
+            <tr><td class="mono">chunk_count</td><td class="mono">IntegerField</td><td>完了後のChunk総数</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#67e8f9;margin-bottom:12px;font-family:monospace">🔢 Chunk</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>フィールド</th><th>型</th><th>説明</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">document</td><td class="mono">ForeignKey(Document)</td><td>所属ドキュメント（CASCADE削除）</td></tr>
+            <tr><td class="mono">content</td><td class="mono">TextField</td><td>テキスト断片の内容</td></tr>
+            <tr><td class="mono">embedding</td><td class="mono">VectorField(384)</td><td>384次元コサインベクトル（pgvector）</td></tr>
+            <tr><td class="mono">position</td><td class="mono">IntegerField</td><td>ドキュメント内の順序（0始まり）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">🗑️</div>
+      <div class="alert-content">
+        <strong>Cascade Delete設計：</strong>Documentを削除すると、関連するすべてのChunk（ベクトルデータを含む）がPostgreSQLによって自動的にカスケード削除されるため、手動でベクトルデータを削除する必要がありません。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="chunking" style="animation-delay:.25s">
+    <h2 class="section-title">✂️ チャンク戦略（Chunking）</h2>
+    <div class="compare-grid">
+      <div class="compare-card blue">
+        <div class="compare-title" style="color:#7ab4ff">📄 小さなChunk（精度重視型）</div>
+        <div class="compare-item"><span class="compare-key">対象分類</span><span class="compare-val" style="color:#6ee7a0">resume</span></div>
+        <div class="compare-item"><span class="compare-key">Chunk Size</span><span class="compare-val" style="color:#fcd34d">400文字</span></div>
+        <div class="compare-item"><span class="compare-key">Overlap</span><span class="compare-val" style="color:#fcd34d">100文字</span></div>
+        <div class="compare-item"><span class="compare-key">利点</span><span class="compare-val" style="color:#6ee7a0">検索精度が高い</span></div>
+      </div>
+      <div class="compare-card green">
+        <div class="compare-title" style="color:#6ee7a0">📘 大きなChunk（コンテキスト重視型）</div>
+        <div class="compare-item"><span class="compare-key">対象分類</span><span class="compare-val" style="color:#fb923c">technical</span></div>
+        <div class="compare-item"><span class="compare-key">Chunk Size</span><span class="compare-val" style="color:#fcd34d">1000文字</span></div>
+        <div class="compare-item"><span class="compare-key">Overlap</span><span class="compare-val" style="color:#fcd34d">200文字</span></div>
+        <div class="compare-item"><span class="compare-key">利点</span><span class="compare-val" style="color:#6ee7a0">意味的完整性</span></div>
+      </div>
+    </div>
+    <div class="code-wrap" style="margin-top:16px">
+      <span class="code-lang">Python</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment"># knowledge_base/services/processor.py — チャンク分割のコアロジック</span>
+<span class="code-key">def</span> <span class="code-val">split_into_chunks</span>(text, chunk_size=<span class="code-str">1000</span>, overlap=<span class="code-str">200</span>):
+    <span class="code-key">if not</span> text:
+        <span class="code-key">return</span> []
+    <span class="code-comment"># stride = chunk_size - overlap → 隣接するChunkに重複部分あり</span>
+    <span class="code-comment"># 重複により、Chunk境界をまたぐ情報の断裂を防ぐ</span>
+    stride = max(<span class="code-val">1</span>, chunk_size - overlap)
+    <span class="code-key">return</span> [text[i: i + chunk_size] <span class="code-key">for</span> i <span class="code-key">in</span> range(<span class="code-val">0</span>, len(text), stride)]</pre>
+    </div>
+  </div>
+
+  <div class="section" id="embedding" style="animation-delay:.3s">
+    <h2 class="section-title">🔢 ベクトル埋め込みサービス</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">埋め込みモデル</div>
+        <div class="info-value code" style="font-size:11px">paraphrase-multilingual-MiniLM-L12-v2</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ベクトル次元</div>
+        <div class="info-value green">384次元</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">多言語サポート</div>
+        <div class="info-value green">あり（50以上の言語）</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">モデルサイズ</div>
+        <div class="info-value yellow">約90MB</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">実行場所</div>
+        <div class="info-value">ローカル（API呼び出しなし）</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">類似度アルゴリズム</div>
+        <div class="info-value code">Cosine Distance</div>
+      </div>
+    </div>
+    <div class="alert-box tip">
+      <div class="alert-icon">🌏</div>
+      <div class="alert-content">
+        <strong>クロスリンガル検索：</strong>多言語モデルの利点は、文書が日本語でもクエリが中国語や英語でも対応でき、ベクトル空間で意味的に近い概念が自然に近い位置にマッピングされることです。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="search" style="animation-delay:.35s">
+    <h2 class="section-title">🔍 ベクトル検索サービス</h2>
+    <div class="code-wrap">
+      <span class="code-lang">Python</span>
+      <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+      <pre class="code-block"><span class="code-comment"># knowledge_base/services/searcher.py — コア検索ロジック</span>
+<span class="code-key">from</span> pgvector.django <span class="code-key">import</span> CosineDistance
+
+<span class="code-key">def</span> <span class="code-val">search</span>(query_vector, top_k=<span class="code-val">5</span>, category=<span class="code-val">None</span>):
+    <span class="code-comment"># select_related でN+1を回避：各ChunkとDocumentデータを同時に取得</span>
+    qs = Chunk.objects.select_related(<span class="code-str">'document'</span>)
+    <span class="code-key">if</span> category:
+        qs = qs.filter(document__category=category)
+    <span class="code-comment"># CosineDistanceは昇順 = 類似度は降順（0=完全一致）</span>
+    <span class="code-key">return</span> qs.order_by(CosineDistance(<span class="code-str">'embedding'</span>, query_vector))[:top_k]</pre>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">デフォルト返却数</div>
+        <div class="info-value code">top-5</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">距離計算式</div>
+        <div class="info-value code">Cosine Distance</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">N+1防止</div>
+        <div class="info-value green">select_related</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">カテゴリフィルタ</div>
+        <div class="info-value green">サポート（省略可）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="api" style="animation-delay:.4s">
+    <h2 class="section-title">🌐 REST APIエンドポイント</h2>
+    <div class="api-table-wrap">
+      <table class="api-table">
+        <thead><tr><th>メソッド</th><th>パス</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/search/</td>
+            <td class="desc">ベクトル検索。パラメータ：<code>q</code>（必須）、<code>category</code>（省略可）。JSON配列を返す（filename、content、distanceを含む）。</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/documents/</td>
+            <td class="desc">ドキュメント一覧。全ドキュメントのid、filename、status、category、chunk_count、uploaded_atを返す。</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-get">GET</span></td>
+            <td class="path">/api/documents/&lt;id&gt;/</td>
+            <td class="desc">ドキュメント詳細。error_message（存在する場合）を追加で返す。</td>
+          </tr>
+          <tr>
+            <td><span class="method-badge method-post">POST</span></td>
+            <td class="path">/（Web UI）</td>
+            <td class="desc">PDFアップロード（フォーム送信）。フィールド：<code>file</code>（PDF）、<code>category</code>（省略可）。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">🔗</div>
+      <div class="alert-content">検索レスポンスにドキュメントの元PDF URL（<code>fileUrl</code>）がある場合、Agentはそれを出典リンクに含め、ユーザーが元のドキュメントを直接ダウンロードできるようにします。</div>
+    </div>
+  </div>
+
+  <div class="section" id="source" style="animation-delay:.45s">
+    <h2 class="section-title">📁 ファイル構成</h2>
+    <div class="source-card">
+      <div class="source-row">
+        <div class="source-block">
+          <div class="sb-label">データモデル</div>
+          <div class="sb-value mono">knowledge_base/models.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">REST APIビュー</div>
+          <div class="sb-value mono">knowledge_base/api_views.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">PDF処理</div>
+          <div class="sb-value mono">knowledge_base/services/processor.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">ベクトル埋め込み</div>
+          <div class="sb-value mono">knowledge_base/services/embedder.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">ベクトル検索</div>
+          <div class="sb-value mono">knowledge_base/services/searcher.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">URLルーティング</div>
+          <div class="sb-value mono">knowledge_base/urls.py</div>
+        </div>
+      </div>
+      <div>
+        <div class="sb-label" style="margin-bottom:10px">主要関数・クラス</div>
+        <div class="tag-list">
+          <span class="tag-item">Document</span>
+          <span class="tag-item">Chunk</span>
+          <span class="tag-item">extract_text()</span>
+          <span class="tag-item">split_into_chunks()</span>
+          <span class="tag-item">chunk_config_for_category()</span>
+          <span class="tag-item">search()</span>
+          <span class="tag-item">Embedder</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="related-pages">
+    <div class="related-title">🔗 関連ページ</div>
+    <div class="related-grid">
+      <a href="agent-service.html" class="related-card">
+        <div class="related-icon">🤖</div>
+        <div class="related-info">
+          <div class="related-name">AI Agentサービス</div>
+          <div class="related-type">このAPIを呼び出すサービス</div>
+        </div>
+      </a>
+      <a href="usage.html" class="related-card">
+        <div class="related-icon">📤</div>
+        <div class="related-info">
+          <div class="related-name">PDFアップロードガイド</div>
+          <div class="related-type">使い方ページ</div>
+        </div>
+      </a>
+      <a href="setup.html" class="related-card">
+        <div class="related-icon">🐳</div>
+        <div class="related-info">
+          <div class="related-name">データベース設定</div>
+          <div class="related-type">pgvector Docker設定</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="prev-next-nav">
+    <a href="agent-service.html" class="nav-btn prev">
+      <div class="nav-arrow">←</div>
+      <div><div class="nav-direction">前のページ</div><div class="nav-title">AI Agentサービス</div></div>
+    </a>
+    <a href="index.html" class="nav-btn next disabled">
+      <div><div class="nav-direction">最終ページ</div><div class="nav-title">概要へ戻る</div></div>
+      <div class="nav-arrow">↩</div>
+    </a>
+  </div>
+</main>
+<script>
+function copyCode(btn){
+  const pre=btn.closest('.code-wrap').querySelector('.code-block');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ コピー完了';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='コピー';btn.classList.remove('copied')},2000);
+  });
+}
+const items=document.querySelectorAll('.toc-item[href^="#"]');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const t=document.querySelector(`.toc-item[href="#${e.target.id}"]`);
+      if(t)t.classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('[id]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
