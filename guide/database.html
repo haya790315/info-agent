@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>データベース設計 — Info-Agent</title>
+<style>
+:root{--bg-primary:#0a0e1a;--bg-card:#1a2235;--bg-card-hover:#1e2a42;--accent:#06b6d4;--accent-light:rgba(6,182,212,0.15);--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e3a5f;--sidebar-width:260px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(6,182,212,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:rgba(17,24,39,0.95);backdrop-filter:blur(20px);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.sidebar-sub{font-size:11px;color:var(--text-muted)}
+.sidebar-section{padding:12px 16px 4px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--text-secondary);font-size:12px;transition:all .2s;margin:1px 8px}
+.toc-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.toc-item.active{background:var(--accent-light);color:var(--accent)}
+.toc-item.current{background:rgba(6,182,212,0.2);color:var(--accent);font-weight:600}
+
+.main-content{margin-left:var(--sidebar-width);padding:40px 48px;max-width:1000px;position:relative;z-index:1}
+.page-header{margin-bottom:36px;animation:fadeInDown .5s ease}
+.breadcrumb{font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--accent);text-decoration:none}
+
+.module-hero{display:flex;align-items:flex-start;gap:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px;border-left:3px solid var(--accent)}
+.hero-icon{width:56px;height:56px;border-radius:12px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.hero-title{font-size:26px;font-weight:800;color:var(--text-primary)}
+.hero-service{font-size:12px;color:var(--accent);font-family:monospace}
+.hero-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1)}
+
+.section{margin-bottom:40px;animation:fadeInUp .5s ease both;scroll-margin-top:20vh}
+.section-title{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:18px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;gap:12px}
+.alert-box.info{background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25)}
+.alert-box.tip{background:rgba(52,168,83,0.08);border:1px solid rgba(52,168,83,0.25)}
+.alert-box.warn{background:rgba(251,188,4,0.08);border:1px solid rgba(251,188,4,0.25)}
+.alert-icon{font-size:18px;flex-shrink:0}
+.alert-content{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.alert-content strong{color:var(--text-primary)}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.info-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-value.code{font-family:monospace;font-size:13px;color:#7ab4ff}
+.info-value.green{color:#6ee7a0}
+.info-value.yellow{color:#fcd34d}
+.info-value.red{color:#f87171}
+.info-value.cyan{color:#67e8f9}
+
+.data-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:16px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{background:#0f172a;color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary)}
+.data-table tr:nth-child(even) td{background:rgba(255,255,255,0.015)}
+.data-table tr:hover td{background:rgba(255,255,255,0.03)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table .mono{font-family:monospace;color:#7ab4ff}
+.data-table .pk{color:#fcd34d;font-size:10px;font-weight:700;letter-spacing:.5px}
+.data-table .fk{color:#fb923c;font-size:10px;font-weight:700;letter-spacing:.5px}
+.data-table .vec{color:#67e8f9;font-size:10px;font-weight:700;letter-spacing:.5px}
+
+.er-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:32px;display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+.er-table{flex:1;min-width:260px}
+.er-table-name{font-family:monospace;font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)}
+.er-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px}
+.er-row:last-child{border-bottom:none}
+.er-col-name{font-family:monospace;color:var(--text-primary);min-width:120px}
+.er-col-type{font-family:monospace;color:#7ab4ff;font-size:11px;flex:1}
+.er-badge{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 5px;border-radius:3px}
+.er-badge.pk{background:rgba(251,188,4,0.15);color:#fcd34d;border:1px solid rgba(251,188,4,0.3)}
+.er-badge.fk{background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.3)}
+.er-badge.vec{background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid rgba(6,182,212,0.3)}
+.er-connector{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:60px;color:var(--text-muted);font-size:12px;gap:4px;min-width:80px}
+.er-line{width:2px;height:40px;background:rgba(255,255,255,0.15);margin:4px auto}
+.er-label{font-size:10px;color:var(--text-muted);text-align:center;letter-spacing:.3px}
+
+.migration-list{display:flex;flex-direction:column;gap:0}
+.migration-item{display:flex;gap:20px;position:relative}
+.migration-item:not(:last-child)::after{content:'';position:absolute;left:15px;top:36px;bottom:0;width:2px;background:linear-gradient(to bottom,var(--border),transparent)}
+.migration-num{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:rgba(6,182,212,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--accent)}
+.migration-body{padding-bottom:24px}
+.migration-name{font-family:monospace;font-size:13px;font-weight:600;color:#7ab4ff;margin-bottom:4px}
+.migration-desc{font-size:12px;color:var(--text-secondary);line-height:1.7}
+
+.storage-tree{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;font-family:monospace;font-size:13px;line-height:1.8}
+.tree-dir{color:#67e8f9}
+.tree-file{color:var(--text-secondary)}
+.tree-comment{color:var(--text-muted);font-style:italic}
+
+.source-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.source-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.source-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px}
+.sb-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.sb-value{font-size:14px;font-weight:600;color:var(--text-primary)}
+.sb-value.mono{font-family:monospace;font-size:13px;color:#7ab4ff}
+.tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.tag-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:6px;padding:5px 12px;font-family:monospace;font-size:12px;color:#c084fc}
+
+.related-pages{margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.related-title{font-size:13px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.related-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-decoration:none;display:flex;align-items:center;gap:12px;transition:all .2s}
+.related-card:hover{background:var(--bg-card-hover);border-color:var(--accent);transform:translateX(4px)}
+.related-icon{font-size:20px;flex-shrink:0}
+.related-info{flex:1;min-width:0}
+.related-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.related-type{font-size:11px;color:var(--text-muted)}
+
+.prev-next-nav{display:flex;justify-content:space-between;gap:16px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.nav-btn{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-decoration:none;flex:1;max-width:45%;transition:all .2s}
+.nav-btn:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.nav-btn.next{flex-direction:row-reverse;text-align:right}
+.nav-btn.disabled{opacity:.3;pointer-events:none}
+.nav-direction{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.nav-arrow{font-size:20px;color:var(--accent);flex-shrink:0}
+
+code{font-family:'Courier New',monospace;font-size:.85em;background:rgba(255,255,255,0.08);color:#7ab4ff;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1)}
+
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.sidebar{display:none}.main-content{margin-left:0;padding:20px}.er-wrap{flex-direction:column}.er-connector{flex-direction:row;padding-top:0;padding-left:60px}.source-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖 Info-Agent</div>
+    <div class="sidebar-sub">AI対話ナレッジ管理システム</div>
+  </div>
+  <div class="sidebar-section">概要</div>
+  <a href="index.html" class="toc-item">🏠 システム概要</a>
+  <div class="sidebar-section">クイックスタート</div>
+  <a href="setup.html" class="toc-item">🛠️ 環境構築</a>
+  <a href="usage.html" class="toc-item">📖 使い方</a>
+  <div class="sidebar-section">ページ目次</div>
+  <a href="#why" class="toc-item">❓ 設計上の決定</a>
+  <a href="#er" class="toc-item">🔗 ERダイアグラム</a>
+  <a href="#document" class="toc-item">📄 Documentテーブル</a>
+  <a href="#chunk" class="toc-item">🔢 Chunkテーブル</a>
+  <a href="#vector" class="toc-item">🧮 pgvector設定</a>
+  <a href="#migrations" class="toc-item">📋 マイグレーション</a>
+  <a href="#storage" class="toc-item">💾 ファイルストレージ</a>
+  <a href="#source" class="toc-item">📁 ファイル構成</a>
+  <div class="sidebar-section">サービス構成</div>
+  <a href="agent-service.html" class="toc-item">🤖 AI Agentサービス</a>
+  <a href="knowledge-base.html" class="toc-item">📚 ナレッジベースサービス</a>
+  <a href="database.html" class="toc-item current">🗄️ データベース設計</a>
+</nav>
+
+<main class="main-content">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="index.html">ホーム</a> › サービス構成 › データベース設計</div>
+    <div class="module-hero">
+      <div class="hero-icon">🗄️</div>
+      <div>
+        <div class="hero-title">データベース設計</div>
+        <div class="hero-service">knowledge_base/models.py — PostgreSQL 17 + pgvector — :5432</div>
+        <div class="hero-desc">2つのコアテーブル（Document / Chunk）でPDF処理ライフサイクル全体を管理します。pgvectorが384次元のコサイン類似度検索を提供し、Django ORMとシームレスに統合されています。</div>
+        <div class="hero-tags">
+          <span class="tag">PostgreSQL 17</span>
+          <span class="tag">pgvector 0.4.2</span>
+          <span class="tag">VectorField(384)</span>
+          <span class="tag">Django ORM</span>
+          <span class="tag">CASCADE DELETE</span>
+          <span class="tag">CosineDistance</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="why" style="animation-delay:.1s">
+    <h2 class="section-title">❓ 設計上の決定</h2>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜPinecone/Weaviateではなくpgvectorを使うのか？</strong><br>
+        DocumentメタデータはすでにPostgreSQLで管理しているため、pgvectorを使えばベクトル検索とメタデータクエリを同一トランザクション・同一接続で完結できます。独立したベクトルDBの運用コストと接続管理が不要になります。
+      </div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">💡</div>
+      <div class="alert-content">
+        <strong>なぜDocument削除時にChunkをCASCADE DELETEするのか？</strong><br>
+        ベクトルデータは孤立すると検索精度を汚染します。Djangoの<code>on_delete=CASCADE</code>によってPostgreSQLレベルで原子的に削除されるため、アプリケーション層での手動クリーンアップが不要です。
+      </div>
+    </div>
+    <div class="alert-box tip">
+      <div class="alert-icon">✅</div>
+      <div class="alert-content">
+        <strong>なぜstatus管理をDocumentモデル内に持つのか？</strong><br>
+        PDF処理（抽出→チャンク分割→ベクトル化）は時間がかかります。statusフィールドにより処理の進捗をAPIで公開でき、フロントエンドがポーリングで状態確認できます。処理失敗時はerror_messageで原因を追跡できます。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="er" style="animation-delay:.15s">
+    <h2 class="section-title">🔗 ERダイアグラム</h2>
+    <div class="er-wrap">
+      <div class="er-table">
+        <div class="er-table-name">📄 knowledge_base_document</div>
+        <div class="er-row">
+          <span class="er-col-name">id</span>
+          <span class="er-col-type">BIGINT</span>
+          <span class="er-badge pk">PK</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">filename</span>
+          <span class="er-col-type">VARCHAR(255)</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">category</span>
+          <span class="er-col-type">VARCHAR(64)</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">file</span>
+          <span class="er-col-type">VARCHAR</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">uploaded_at</span>
+          <span class="er-col-type">TIMESTAMPTZ</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">status</span>
+          <span class="er-col-type">VARCHAR(20)</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">error_message</span>
+          <span class="er-col-type">TEXT</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">chunk_count</span>
+          <span class="er-col-type">INT</span>
+        </div>
+      </div>
+      <div class="er-connector">
+        <div class="er-label">1</div>
+        <div class="er-line"></div>
+        <div class="er-label" style="font-size:9px">CASCADE</div>
+        <div class="er-line"></div>
+        <div class="er-label">n</div>
+      </div>
+      <div class="er-table">
+        <div class="er-table-name">🔢 knowledge_base_chunk</div>
+        <div class="er-row">
+          <span class="er-col-name">id</span>
+          <span class="er-col-type">BIGINT</span>
+          <span class="er-badge pk">PK</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">document_id</span>
+          <span class="er-col-type">BIGINT</span>
+          <span class="er-badge fk">FK</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">content</span>
+          <span class="er-col-type">TEXT</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">embedding</span>
+          <span class="er-col-type">VECTOR(384)</span>
+          <span class="er-badge vec">VEC</span>
+        </div>
+        <div class="er-row">
+          <span class="er-col-name">position</span>
+          <span class="er-col-type">INT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="document" style="animation-delay:.2s">
+    <h2 class="section-title">📄 Documentテーブル</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">PDFドキュメントのメタデータと処理ステータスを管理します。デフォルトソートは<code>-uploaded_at</code>（新しい順）。</p>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>カラム</th><th>型</th><th>制約</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">id</td>
+            <td class="mono">BIGINT</td>
+            <td><span class="pk">PK</span></td>
+            <td>自動採番主キー（64ビット）</td>
+          </tr>
+          <tr>
+            <td class="mono">filename</td>
+            <td class="mono">VARCHAR(255)</td>
+            <td>NOT NULL</td>
+            <td>アップロードされたPDFファイル名</td>
+          </tr>
+          <tr>
+            <td class="mono">category</td>
+            <td class="mono">VARCHAR(64)</td>
+            <td>BLANK, DEFAULT=''</td>
+            <td>文書分類（resume / manual / policy / technical / report / other）</td>
+          </tr>
+          <tr>
+            <td class="mono">file</td>
+            <td class="mono">VARCHAR</td>
+            <td>BLANK, NULL</td>
+            <td>PDF保存パス（<code>media/pdfs/{category}/{filename}</code>）</td>
+          </tr>
+          <tr>
+            <td class="mono">uploaded_at</td>
+            <td class="mono">TIMESTAMPTZ</td>
+            <td>auto_now_add</td>
+            <td>アップロード日時（変更不可）</td>
+          </tr>
+          <tr>
+            <td class="mono">status</td>
+            <td class="mono">VARCHAR(20)</td>
+            <td>DEFAULT='pending'</td>
+            <td>処理状態（pending → processing → complete / failed）</td>
+          </tr>
+          <tr>
+            <td class="mono">error_message</td>
+            <td class="mono">TEXT</td>
+            <td>BLANK, DEFAULT=''</td>
+            <td>処理失敗時のエラー内容</td>
+          </tr>
+          <tr>
+            <td class="mono">chunk_count</td>
+            <td class="mono">INT</td>
+            <td>DEFAULT=0</td>
+            <td>処理完了後のチャンク総数</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <p style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">ステータス遷移</p>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;font-size:12px;line-height:2;font-family:monospace">
+          <span style="color:#fcd34d">pending</span> → <span style="color:#fb923c">processing</span> → <span style="color:#6ee7a0">complete</span><br>
+          <span style="color:#fcd34d">pending</span> → <span style="color:#fb923c">processing</span> → <span style="color:#f87171">failed</span>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">カテゴリ一覧</p>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;font-size:12px;line-height:2;font-family:monospace">
+          <span style="color:#7ab4ff">resume</span> / <span style="color:#7ab4ff">manual</span> / <span style="color:#7ab4ff">policy</span><br>
+          <span style="color:#7ab4ff">technical</span> / <span style="color:#7ab4ff">report</span> / <span style="color:#7ab4ff">other</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="chunk" style="animation-delay:.25s">
+    <h2 class="section-title">🔢 Chunkテーブル</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">PDFから抽出したテキストブロックと384次元の埋め込みベクトルを格納します。デフォルトソートは<code>position</code>（文書内順序）。</p>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>カラム</th><th>型</th><th>制約</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">id</td>
+            <td class="mono">BIGINT</td>
+            <td><span class="pk">PK</span></td>
+            <td>自動採番主キー（64ビット）</td>
+          </tr>
+          <tr>
+            <td class="mono">document_id</td>
+            <td class="mono">BIGINT</td>
+            <td><span class="fk">FK</span> CASCADE</td>
+            <td>Document外部キー。Documentが削除されると連動して削除される</td>
+          </tr>
+          <tr>
+            <td class="mono">content</td>
+            <td class="mono">TEXT</td>
+            <td>NOT NULL</td>
+            <td>テキストチャンクの内容</td>
+          </tr>
+          <tr>
+            <td class="mono">embedding</td>
+            <td class="mono">VECTOR(384)</td>
+            <td><span class="vec">pgvector</span></td>
+            <td>sentence-transformersが生成した384次元のベクトル表現</td>
+          </tr>
+          <tr>
+            <td class="mono">position</td>
+            <td class="mono">INT</td>
+            <td>NOT NULL</td>
+            <td>文書内チャンクの順序（0始まり）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-icon">🔁</div>
+      <div class="alert-content">
+        <strong>related_name='chunks'：</strong>DjangoORMから<code>document.chunks.all()</code>でそのドキュメントのすべてのChunkを取得できます。N+1問題は<code>select_related('document')</code>で防止しています。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="vector" style="animation-delay:.3s">
+    <h2 class="section-title">🧮 pgvector設定</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">PostgreSQLバージョン</div>
+        <div class="info-value cyan">17</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">pgvectorバージョン</div>
+        <div class="info-value code">0.4.2</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ベクトル次元</div>
+        <div class="info-value cyan">384</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">距離計算</div>
+        <div class="info-value code">CosineDistance</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">検索距離しきい値</div>
+        <div class="info-value code">SEARCH_MAX_DISTANCE</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Dockerイメージ</div>
+        <div class="info-value code" style="font-size:11px">pgvector/pgvector:pg17</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">埋め込みモデル</div>
+        <div class="info-value code" style="font-size:10px">paraphrase-multilingual-MiniLM-L12-v2</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">モデルサイズ</div>
+        <div class="info-value yellow">約90MB</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">コンテナ名</div>
+        <div class="info-value code">info-agent-db</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">データベース名</div>
+        <div class="info-value code">info_agent</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ポート</div>
+        <div class="info-value code">5432</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">多言語サポート</div>
+        <div class="info-value green">50以上の言語</div>
+      </div>
+    </div>
+    <div class="alert-box tip" style="margin-top:16px">
+      <div class="alert-icon">🔍</div>
+      <div class="alert-content">
+        <strong>コサイン距離とは：</strong>0が完全一致、2が完全に逆方向。<code>SEARCH_MAX_DISTANCE</code>（デフォルト1.0）以下のChunkのみ検索結果として返されます。しきい値を小さくすると検索が厳密になります。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="migrations" style="animation-delay:.35s">
+    <h2 class="section-title">📋 マイグレーション履歴</h2>
+    <div class="migration-list">
+      <div class="migration-item">
+        <div class="migration-num">0</div>
+        <div class="migration-body">
+          <div class="migration-name">0001_vector_extension</div>
+          <div class="migration-desc">PostgreSQLの<code>pgvector</code>拡張を有効化。<strong>他のマイグレーションより先に実行する必要があります。</strong>VectorFieldを使うすべてのテーブルの前提条件です。</div>
+        </div>
+      </div>
+      <div class="migration-item">
+        <div class="migration-num">1</div>
+        <div class="migration-body">
+          <div class="migration-name">0002_initial</div>
+          <div class="migration-desc"><code>knowledge_base_document</code>テーブルを作成（filename / status / error_message / chunk_count）。<code>knowledge_base_chunk</code>テーブルを作成（content / embedding VECTOR(384) / position / document_id FK）。</div>
+        </div>
+      </div>
+      <div class="migration-item">
+        <div class="migration-num">2</div>
+        <div class="migration-body">
+          <div class="migration-name">0003_document_file</div>
+          <div class="migration-desc">Documentに<code>file</code>フィールドを追加（FileField, blank=True, null=True, upload_to='pdfs/'）。PDFファイル本体の保存パスを管理するために追加されました。</div>
+        </div>
+      </div>
+      <div class="migration-item">
+        <div class="migration-num">3</div>
+        <div class="migration-body">
+          <div class="migration-name">0004_document_category</div>
+          <div class="migration-desc">Documentに<code>category</code>フィールドを追加（CharField, 6種類の選択肢）。カテゴリ別チャンク戦略とベクトル検索フィルタリングのために追加されました。</div>
+        </div>
+      </div>
+      <div class="migration-item">
+        <div class="migration-num">4</div>
+        <div class="migration-body">
+          <div class="migration-name">0005_alter_document_file</div>
+          <div class="migration-desc"><code>file</code>フィールドのupload_toを固定文字列から動的関数<code>_pdf_upload_path</code>に変更。カテゴリ別サブフォルダ（<code>pdfs/{category}/{filename}</code>）に自動振り分けされます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="storage" style="animation-delay:.4s">
+    <h2 class="section-title">💾 ファイルストレージ構造</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">アップロードされたPDFは<code>media/</code>以下にカテゴリ別に保存されます。単一ファイルの上限は10MBです。</p>
+    <div class="storage-tree">
+      <span class="tree-dir">media/</span><br>
+      <span class="tree-dir">└── pdfs/</span><br>
+      <span class="tree-dir">    ├── resume/</span>          <span class="tree-comment"># 職歴書・履歴書</span><br>
+      <span class="tree-dir">    ├── manual/</span>          <span class="tree-comment"># 操作マニュアル</span><br>
+      <span class="tree-dir">    ├── policy/</span>          <span class="tree-comment"># 規程・ポリシー</span><br>
+      <span class="tree-dir">    ├── technical/</span>       <span class="tree-comment"># 技術資料</span><br>
+      <span class="tree-dir">    ├── report/</span>          <span class="tree-comment"># レポート・報告書</span><br>
+      <span class="tree-dir">    ├── other/</span>           <span class="tree-comment"># その他</span><br>
+      <span class="tree-dir">    └── uncategorized/</span>   <span class="tree-comment"># 分類なし</span>
+    </div>
+    <div class="alert-box warn" style="margin-top:16px">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <strong>ローカルストレージの制限：</strong>現在はサーバーのローカルファイルシステムに保存されます。本番環境では<code>FileField</code>のストレージバックエンドをAmazon S3やGoogle Cloud Storageに切り替える予定です。
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="source" style="animation-delay:.45s">
+    <h2 class="section-title">📁 ファイル構成</h2>
+    <div class="source-card">
+      <div class="source-row">
+        <div class="source-block">
+          <div class="sb-label">モデル定義</div>
+          <div class="sb-value mono">knowledge_base/models.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">マイグレーション</div>
+          <div class="sb-value mono">knowledge_base/migrations/</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">DB接続設定</div>
+          <div class="sb-value mono">config/settings.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">Dockerコンテナ</div>
+          <div class="sb-value mono">docker-compose.yml</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">管理画面設定</div>
+          <div class="sb-value mono">knowledge_base/admin.py</div>
+        </div>
+        <div class="source-block">
+          <div class="sb-label">テスト用DB設定</div>
+          <div class="sb-value mono">config/test_settings.py</div>
+        </div>
+      </div>
+      <div>
+        <div class="sb-label" style="margin-bottom:10px">主要クラス・関数</div>
+        <div class="tag-list">
+          <span class="tag-item">Document</span>
+          <span class="tag-item">Chunk</span>
+          <span class="tag-item">VectorField(384)</span>
+          <span class="tag-item">CosineDistance</span>
+          <span class="tag-item">_pdf_upload_path()</span>
+          <span class="tag-item">STATUS_CHOICES</span>
+          <span class="tag-item">CATEGORY_CHOICES</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="related-pages">
+    <div class="related-title">🔗 関連ページ</div>
+    <div class="related-grid">
+      <a href="knowledge-base.html" class="related-card">
+        <div class="related-icon">📚</div>
+        <div class="related-info">
+          <div class="related-name">ナレッジベースサービス</div>
+          <div class="related-type">このDBを使うDjangoサービス</div>
+        </div>
+      </a>
+      <a href="agent-service.html" class="related-card">
+        <div class="related-icon">🤖</div>
+        <div class="related-info">
+          <div class="related-name">AI Agentサービス</div>
+          <div class="related-type">検索APIを呼び出すサービス</div>
+        </div>
+      </a>
+      <a href="setup.html" class="related-card">
+        <div class="related-icon">🐳</div>
+        <div class="related-info">
+          <div class="related-name">環境構築</div>
+          <div class="related-type">Docker・マイグレーション手順</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="prev-next-nav">
+    <a href="knowledge-base.html" class="nav-btn prev">
+      <div class="nav-arrow">←</div>
+      <div><div class="nav-direction">前のページ</div><div class="nav-title">ナレッジベースサービス</div></div>
+    </a>
+    <a href="index.html" class="nav-btn next disabled">
+      <div><div class="nav-direction">最終ページ</div><div class="nav-title">概要へ戻る</div></div>
+      <div class="nav-arrow">↩</div>
+    </a>
+  </div>
+</main>
+<script>
+const items=document.querySelectorAll('.toc-item[href^="#"]');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const t=document.querySelector(`.toc-item[href="#${e.target.id}"]`);
+      if(t)t.classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.querySelectorAll('[id]').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>

@@ -83,3 +83,84 @@
 これにより、LLM がどのツールをどの順番・引数で呼び出したかをリアルタイムで追跡できます。
 
 ---
+
+## データベースアーキテクチャ
+
+### ER 図
+
+```
+┌──────────────────────────────────────┐
+│             Document                 │
+├──────────────────────────────────────┤
+│  id            BIGINT        (PK)    │
+│  filename      VARCHAR(255)          │
+│  category      VARCHAR(64)           │
+│  file          VARCHAR               │
+│  uploaded_at   TIMESTAMPTZ           │
+│  status        VARCHAR(20)           │
+│  error_message TEXT                  │
+│  chunk_count   INT  DEFAULT 0        │
+└─────────────────┬────────────────────┘
+                  │  1 : n  CASCADE DELETE
+┌─────────────────┴────────────────────┐
+│               Chunk                  │
+├──────────────────────────────────────┤
+│  id            BIGINT        (PK)    │
+│  document_id   BIGINT        (FK)    │
+│  content       TEXT                  │
+│  embedding     VECTOR(384)           │
+│  position      INT                   │
+└──────────────────────────────────────┘
+```
+
+### テーブル定義
+
+#### knowledge_base_document
+
+| カラム | 型 | 説明 |
+|---|---|---|
+| `id` | `BIGINT` (PK) | 自動採番主キー |
+| `filename` | `VARCHAR(255)` | PDF ファイル名 |
+| `category` | `VARCHAR(64)` | 分類（resume / manual / policy / technical / report / other） |
+| `file` | `VARCHAR` | PDF 保存パス（`media/pdfs/{category}/{filename}`） |
+| `uploaded_at` | `TIMESTAMPTZ` | アップロード日時（auto_now_add） |
+| `status` | `VARCHAR(20)` | 処理状態（pending / processing / complete / failed） |
+| `error_message` | `TEXT` | 処理失敗時のエラー内容 |
+| `chunk_count` | `INT` | 処理完了後のチャンク総数（デフォルト 0） |
+
+#### knowledge_base_chunk
+
+| カラム | 型 | 説明 |
+|---|---|---|
+| `id` | `BIGINT` (PK) | 自動採番主キー |
+| `document_id` | `BIGINT` (FK) | Document への外部キー（CASCADE DELETE） |
+| `content` | `TEXT` | テキスト内容 |
+| `embedding` | `VECTOR(384)` | 384 次元ベクトル（pgvector） |
+| `position` | `INT` | ドキュメント内の順序（0 始まり） |
+
+### pgvector 設定
+
+| 項目 | 値 |
+|---|---|
+| PostgreSQL バージョン | 17（`pgvector/pgvector:pg17`） |
+| pgvector バージョン | 0.4.2 |
+| ベクトル次元 | 384 |
+| 距離計算 | コサイン距離（CosineDistance） |
+| 検索距離しきい値 | `SEARCH_MAX_DISTANCE`（デフォルト 1.0） |
+| 埋め込みモデル | paraphrase-multilingual-MiniLM-L12-v2 |
+
+### ファイルストレージ構造
+
+アップロードされた PDF はカテゴリ別に `media/` 以下に保存されます。
+
+```
+media/
+└── pdfs/
+    ├── resume/          # 職歴書・履歴書
+    ├── manual/          # 操作マニュアル
+    ├── policy/          # 規程・ポリシー
+    ├── technical/       # 技術資料
+    ├── report/          # レポート・報告書
+    ├── other/           # その他
+    └── uncategorized/   # 分類なし
+```
