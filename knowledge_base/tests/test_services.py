@@ -128,6 +128,8 @@ class SearchServiceTest(SimpleTestCase):
             return_value = []
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        # annotate(distance=CosineDistance(...)) がチェーンに入るためモックしておく
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=return_value)
         return mock_qs

@@ -44,9 +44,10 @@ agent:
 	cd $(AGENT_DIR) && bun run dev
 
 # バックエンド（Django :8080）とエージェント（Bun :3000）を同時起動する。
+# 前提として db-start を依存に指定しているため、先にDB（Docker）が起動・準備完了する。
 # Ctrl-C で両方をまとめて停止する（trap 'kill 0' でプロセスグループを終了）。
-# 事前に `make db` でDBを起動し、agent/.env に OPENAI_API_KEY を設定しておくこと。
-dev-all:
+# 事前に agent/.env に OPENAI_API_KEY を設定しておくこと。
+dev-all: db-start
 	@echo "起動中: バックエンド (8080) とエージェント (3000)"
 	@trap 'kill 0' INT TERM EXIT; \
 		DB_PASSWORD=$(DB_PASSWORD) uv run python manage.py runserver 8080 & \

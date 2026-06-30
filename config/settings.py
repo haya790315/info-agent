@@ -119,3 +119,9 @@ LOGGING = {
 # ファイルアップロードサイズ制限（10MB）
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# セマンティック検索の関連性しきい値（コサイン距離の上限）
+# この値を超えるチャンクは「無関係」とみなして検索結果から除外する。
+# 0 = 完全一致、2 = 真逆。小さいほど厳しく絞り込む。
+# 環境変数 SEARCH_MAX_DISTANCE で上書き可能（未設定時は 0.8）。
+SEARCH_MAX_DISTANCE = float(os.environ.get("SEARCH_MAX_DISTANCE", "0.8"))

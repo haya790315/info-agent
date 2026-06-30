@@ -13,11 +13,6 @@ export interface Config {
   openaiBaseUrl: string | undefined;
   /** ナレッジベース Django REST API の base URL（必須） */
   kbApiBaseUrl: string;
-  /**
-   * 検索結果を採用するコサイン距離の上限（小さいほど厳しい）。
-   * これより大きい（＝関連が薄い）チャンクは破棄する。既定 1.0。
-   */
-  searchMaxDistance: number;
 }
 
 /** 環境変数ソースの型（process.env 互換） */
@@ -47,19 +42,11 @@ export function loadConfig(
 
   const openaiBaseUrl = env.OPENAI_BASE_URL?.trim();
 
-  // 検索距離閾値（不正値は既定 1.0 にフォールバック）
-  const rawDistance = env.SEARCH_MAX_DISTANCE?.trim();
-  const parsedDistance = rawDistance ? Number(rawDistance) : 1.0;
-  const searchMaxDistance = Number.isFinite(parsedDistance)
-    ? parsedDistance
-    : 1.0;
-
   return {
     // 上の検証で undefined でないことが保証されている
     openaiApiKey: openaiApiKey as string,
     openaiModel: env.OPENAI_MODEL?.trim() || "gpt-5.4-mini",
     openaiBaseUrl: openaiBaseUrl ? openaiBaseUrl : undefined,
     kbApiBaseUrl: kbApiBaseUrl as string,
-    searchMaxDistance,
   };
 }

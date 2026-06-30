@@ -4,6 +4,7 @@ UploadView: PDF アップロード + ingestion pipeline の調整を担当する
 DocumentDetailView: ドキュメント詳細表示を担当する
 SearchView: セマンティック検索を担当する
 """
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -121,7 +122,14 @@ class SearchView(View):
         # クエリをベクトル化して類似チャンクを検索
         query = form.cleaned_data["query"]
         vector = embedder.embed_one(query)
-        chunks = searcher.search(vector)
+        # ハイブリッド検索：ベクトル距離しきい値で絞りつつ、query_text で字面一致も併用する。
+        # 人名・固有名詞（例「コウルーヨウ」）はベクトルだけでは拾えないため query_text を渡す。
+        # しきい値は環境変数で制御するため、フロント側（フォーム・テンプレート）の変更は不要。
+        chunks = searcher.search(
+            vector,
+            max_distance=settings.SEARCH_MAX_DISTANCE,
+            query_text=query,
+        )
 
         ctx = {"form": form, "chunks": chunks}
         if is_htmx:

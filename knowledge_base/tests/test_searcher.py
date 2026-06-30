@@ -5,12 +5,13 @@ SearcherService のユニットテスト（モックベース、DB不要）
 
 テスト戦略：
   - Chunk.objects をモックして DB なしで実行
-  - select_related, order_by(CosineDistance), [:top_k] のチェーンを検証
+  - select_related, annotate(CosineDistance), order_by('distance'), [:top_k] のチェーンを検証
 """
 from unittest.mock import MagicMock, patch, call
+from django.db.models import Q
 from django.test import SimpleTestCase
 
-from knowledge_base.services.searcher import search
+from knowledge_base.services.searcher import search, _dedupe_by_pk
 
 
 class SearchFunctionSignatureTest(SimpleTestCase):
@@ -48,6 +49,7 @@ class SearchMockTest(SimpleTestCase):
         # モックチェーンの設定：空のリストを返す
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=[])
         mock_chunk_cls.objects = mock_qs
@@ -61,6 +63,7 @@ class SearchMockTest(SimpleTestCase):
         """select_related('document') が呼ばれること"""
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=[])
         mock_chunk_cls.objects = mock_qs
@@ -71,11 +74,12 @@ class SearchMockTest(SimpleTestCase):
 
     @patch('knowledge_base.services.searcher.CosineDistance')
     @patch('knowledge_base.services.searcher.Chunk')
-    def test_order_by_cosine_distance_is_called(self, mock_chunk_cls, mock_cosine_distance):
-        """order_by(CosineDistance('embedding', query_vector)) が呼ばれること"""
+    def test_annotate_cosine_distance_and_order_by(self, mock_chunk_cls, mock_cosine_distance):
+        """annotate(distance=CosineDistance(...)) と order_by('distance') が呼ばれること"""
         query_vector = [0.1] * 384
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=[])
         mock_chunk_cls.objects = mock_qs
@@ -87,14 +91,17 @@ class SearchMockTest(SimpleTestCase):
 
         # CosineDistance('embedding', query_vector) で初期化されること
         mock_cosine_distance.assert_called_once_with('embedding', query_vector)
-        # order_by に CosineDistance インスタンスが渡されること
-        mock_qs.order_by.assert_called_once_with(mock_cosine_distance_instance)
+        # annotate に distance=CosineDistance インスタンスが渡されること
+        mock_qs.annotate.assert_called_once_with(distance=mock_cosine_distance_instance)
+        # order_by には算出フィールド名 'distance' が渡されること
+        mock_qs.order_by.assert_called_once_with('distance')
 
     @patch('knowledge_base.services.searcher.Chunk')
     def test_top_k_slice_is_applied(self, mock_chunk_cls):
         """[:top_k] のスライスが適用されること"""
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=[])
         mock_chunk_cls.objects = mock_qs
@@ -109,6 +116,7 @@ class SearchMockTest(SimpleTestCase):
         """デフォルト top_k=5 の場合 [:5] のスライスが適用されること"""
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=[])
         mock_chunk_cls.objects = mock_qs
@@ -129,6 +137,7 @@ class SearchMockTest(SimpleTestCase):
 
         mock_qs = MagicMock()
         mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
         mock_qs.order_by.return_value = mock_qs
         mock_qs.__getitem__ = MagicMock(return_value=expected)
         mock_chunk_cls.objects = mock_qs
@@ -138,14 +147,47 @@ class SearchMockTest(SimpleTestCase):
         self.assertEqual(result, expected)
 
     @patch('knowledge_base.services.searcher.Chunk')
+    def test_max_distance_applies_filter(self, mock_chunk_cls):
+        """max_distance 指定時は distance__lte でフィルタが掛かること"""
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.order_by.return_value = mock_qs
+        mock_qs.__getitem__ = MagicMock(return_value=[])
+        mock_chunk_cls.objects = mock_qs
+
+        search([0.1] * 384, max_distance=0.5)
+
+        mock_qs.filter.assert_called_once_with(distance__lte=0.5)
+
+    @patch('knowledge_base.services.searcher.Chunk')
+    def test_no_max_distance_skips_filter(self, mock_chunk_cls):
+        """max_distance 未指定（None）時は filter を呼ばないこと"""
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
+        mock_qs.order_by.return_value = mock_qs
+        mock_qs.__getitem__ = MagicMock(return_value=[])
+        mock_chunk_cls.objects = mock_qs
+
+        search([0.1] * 384)
+
+        mock_qs.filter.assert_not_called()
+
+    @patch('knowledge_base.services.searcher.Chunk')
     def test_method_chain_order(self, mock_chunk_cls):
-        """select_related → order_by → スライス の順序でチェーンされること"""
+        """select_related → annotate → order_by → スライス の順序でチェーンされること"""
         call_order = []
 
         mock_qs = MagicMock()
 
         def mock_select_related(*args, **kwargs):
             call_order.append('select_related')
+            return mock_qs
+
+        def mock_annotate(*args, **kwargs):
+            call_order.append('annotate')
             return mock_qs
 
         def mock_order_by(*args, **kwargs):
@@ -157,6 +199,7 @@ class SearchMockTest(SimpleTestCase):
             return []
 
         mock_qs.select_related = mock_select_related
+        mock_qs.annotate = mock_annotate
         mock_qs.order_by = mock_order_by
         # __getitem__ は MagicMock の side_effect 経由で設定する
         # （直接関数を代入すると self が渡されてしまうため）
@@ -165,4 +208,81 @@ class SearchMockTest(SimpleTestCase):
 
         search([0.1] * 384)
 
-        self.assertEqual(call_order, ['select_related', 'order_by', 'slice'])
+        # max_distance 未指定なので filter は挟まらない
+        self.assertEqual(call_order, ['select_related', 'annotate', 'order_by', 'slice'])
+
+
+class HybridSearchTest(SimpleTestCase):
+    """ハイブリッド検索（字面一致併用）の動作テスト"""
+
+    @patch('knowledge_base.services.searcher.Chunk')
+    def test_query_text_triggers_lexical_filter(self, mock_chunk_cls):
+        """query_text 指定時は content/filename への字面フィルタが呼ばれること"""
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.order_by.return_value = mock_qs
+        mock_qs.__getitem__ = MagicMock(return_value=[])
+        mock_chunk_cls.objects = mock_qs
+
+        search([0.1] * 384, max_distance=0.8, query_text='コウルーヨウ')
+
+        # 字面一致は content または filename の OR 条件（Q）で呼ばれる
+        expected_q = (
+            Q(content__icontains='コウルーヨウ')
+            | Q(document__filename__icontains='コウルーヨウ')
+        )
+        mock_qs.filter.assert_any_call(expected_q)
+        # ベクトル距離しきい値フィルタも呼ばれる
+        mock_qs.filter.assert_any_call(distance__lte=0.8)
+
+    @patch('knowledge_base.services.searcher.Chunk')
+    def test_no_query_text_skips_lexical_filter(self, mock_chunk_cls):
+        """query_text 未指定時は字面フィルタ（Q による位置引数）を呼ばないこと"""
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.order_by.return_value = mock_qs
+        mock_qs.__getitem__ = MagicMock(return_value=[])
+        mock_chunk_cls.objects = mock_qs
+
+        search([0.1] * 384, max_distance=0.8)
+
+        # 字面フィルタは Q を位置引数で渡す。query_text なしでは位置引数呼び出しが無い
+        for c in mock_qs.filter.call_args_list:
+            self.assertEqual(c.args, ())
+
+
+class DedupeByPkTest(SimpleTestCase):
+    """_dedupe_by_pk ヘルパーの単体テスト（DB不要）"""
+
+    def _chunk(self, pk):
+        return MagicMock(pk=pk)
+
+    def test_preserves_order_and_removes_duplicates(self):
+        """順序を保ちつつ pk 重複を除去する（先勝ち）"""
+        a, b, c = self._chunk(1), self._chunk(2), self._chunk(3)
+        b_dup = self._chunk(2)  # b と同じ pk
+        result = _dedupe_by_pk([a, b, b_dup, c], top_k=5)
+        self.assertEqual([x.pk for x in result], [1, 2, 3])
+
+    def test_first_occurrence_wins(self):
+        """重複時は先に現れたインスタンスを残す（字面一致を優先）"""
+        lexical = self._chunk(7)
+        vector_dup = self._chunk(7)
+        result = _dedupe_by_pk([lexical, vector_dup], top_k=5)
+        self.assertEqual(len(result), 1)
+        self.assertIs(result[0], lexical)
+
+    def test_caps_at_top_k(self):
+        """top_k 件で打ち切る"""
+        chunks = [self._chunk(i) for i in range(10)]
+        result = _dedupe_by_pk(chunks, top_k=3)
+        self.assertEqual(len(result), 3)
+        self.assertEqual([x.pk for x in result], [0, 1, 2])
+
+    def test_empty_input(self):
+        """空入力は空リストを返す"""
+        self.assertEqual(_dedupe_by_pk([], top_k=5), [])

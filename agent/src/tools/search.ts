@@ -1,14 +1,13 @@
 /**
  * search_knowledge_base ツール定義
  * 意味検索でナレッジベースの関連チャンクを取得する。
- * maxDistance を超えるチャンクを除外してノイズを抑える。
  */
 import { z } from "zod";
 
 import type { KbClient } from "../types";
 import { defineTool, guarded } from "./helpers";
 
-export function createSearchTool(kb: KbClient, maxDistance: number) {
+export function createSearchTool(kb: KbClient) {
   return defineTool({
     name: "search_knowledge_base",
     description:
@@ -32,12 +31,9 @@ export function createSearchTool(kb: KbClient, maxDistance: number) {
     }),
     run: ({ query, category }) =>
       guarded(async () => {
-        const all = await kb.search(query, category);
-        // distance が null（未提供）の結果は安全側で残す
-        const relevant = all.filter(
-          (r) => r.distance === null || r.distance <= maxDistance,
-        );
-        return { ok: true, data: relevant };
+        // サーバ側で関連性フィルタ済みのため、結果はそのまま返す
+        const results = await kb.search(query, category);
+        return { ok: true, data: results };
       }),
   });
 }

@@ -23,13 +23,6 @@ describe("loadConfig", () => {
     expect(config.openaiBaseUrl).toBeUndefined();
     expect(config.openaiApiKey).toBe("key");
     expect(config.kbApiBaseUrl).toBe("http://localhost:8000");
-    expect(config.searchMaxDistance).toBe(1.0);
-  });
-
-  test("SEARCH_MAX_DISTANCE を尊重し、不正値は既定 1.0 にフォールバック", () => {
-    const base = { OPENAI_API_KEY: "key", KB_API_BASE_URL: "http://x" };
-    expect(loadConfig({ ...base, SEARCH_MAX_DISTANCE: "0.6" }).searchMaxDistance).toBe(0.6);
-    expect(loadConfig({ ...base, SEARCH_MAX_DISTANCE: "abc" }).searchMaxDistance).toBe(1.0);
   });
 
   test("明示された任意変数を尊重する", () => {

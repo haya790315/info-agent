@@ -6,6 +6,7 @@ embedder と searcher はモックして実モデルロードを回避する
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -125,7 +126,12 @@ class SearchViewPostValidTest(TestCase):
 
         self.client.post(self.url, {"query": "Python とは"})
 
-        mock_searcher.search.assert_called_once_with(vector)
+        # 関連性しきい値と query_text（ハイブリッド検索）が渡されることを確認する
+        mock_searcher.search.assert_called_once_with(
+            vector,
+            max_distance=settings.SEARCH_MAX_DISTANCE,
+            query_text="Python とは",
+        )
 
     @patch("knowledge_base.views.searcher")
     @patch("knowledge_base.views.embedder")

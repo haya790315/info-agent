@@ -58,7 +58,7 @@ if (import.meta.main) {
   // MCP サーバーは OpenAI を使わないため OPENAI_API_KEY チェックをスキップする
   const config = loadConfig(process.env, { requireOpenAI: false });
   const kb = createKbClient(config.kbApiBaseUrl);
-  const registry = createToolRegistry(kb, config.searchMaxDistance);
+  const registry = createToolRegistry(kb);
   const server = buildMcpServer(registry);
   const transport = new StdioServerTransport();
   await server.connect(transport);

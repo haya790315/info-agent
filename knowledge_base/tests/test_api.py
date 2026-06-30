@@ -167,10 +167,12 @@ class SearchAPITest(TestCase):
         )
         doc.file.save("src.pdf", ContentFile(b"%PDF"), save=True)
         # 未保存の Chunk インスタンス（searcher のモック戻り値として使用）
+        # searcher は distance を annotate するため、その挙動を手動で再現する
         chunk = Chunk(
             document=doc, content="annual leave is 10 days",
             embedding=[0.0] * 384, position=0,
         )
+        chunk.distance = 0.1234
         with patch.object(api_views.embedder, "embed_one", return_value=[0.0] * 384), \
              patch.object(api_views.searcher, "search", return_value=[chunk]):
             resp = self._post({"query": "leave"})
@@ -181,6 +183,8 @@ class SearchAPITest(TestCase):
         self.assertEqual(item["filename"], "src.pdf")
         self.assertEqual(item["document_id"], doc.pk)
         self.assertTrue(item["file_url"].startswith("http"))
+        # annotate された distance がそのまま（丸めて）返ること
+        self.assertEqual(item["distance"], 0.1234)
 
     def test_response_is_pure_json(self):
         """レスポンスは純 JSON（HTML ラップなし）"""

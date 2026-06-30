@@ -24,30 +24,21 @@ describe("ToolRegistry", () => {
     expect(await tool.execute({ query: "x" })).toEqual({ ok: true, data: [] });
   });
 
-  test("search_knowledge_base は maxDistance を超える結果を破棄する", async () => {
+  test("search_knowledge_base はサーバの結果をそのまま返す（フィルタは Django 側）", async () => {
+    // 関連性フィルタはサーバ側（settings.SEARCH_MAX_DISTANCE）で済んでいる想定。
     const items = [
       { content: "近い", filename: "a.pdf", category: "resume", documentId: 1, fileUrl: null, distance: 0.3 },
       { content: "遠い", filename: "b.pdf", category: "technical", documentId: 2, fileUrl: null, distance: 0.9 },
     ];
-    const reg = createToolRegistry(fakeKb({ search: async () => items }), 0.5);
+    const reg = createToolRegistry(fakeKb({ search: async () => items }));
     const tool = getTool(reg, "search_knowledge_base");
     const result = await tool.execute({ query: "x" });
     expect(result.ok).toBe(true);
     if (result.ok) {
       const data = result.data as typeof items;
-      expect(data).toHaveLength(1);
-      expect(data[0]?.filename).toBe("a.pdf");
+      // distance に関わらず全件そのまま返る
+      expect(data).toHaveLength(2);
     }
-  });
-
-  test("distance が null の結果は安全側で残す", async () => {
-    const items = [
-      { content: "x", filename: "a.pdf", category: "", documentId: 1, fileUrl: null, distance: null },
-    ];
-    const reg = createToolRegistry(fakeKb({ search: async () => items }), 0.5);
-    const tool = getTool(reg, "search_knowledge_base");
-    const result = await tool.execute({ query: "x" });
-    expect(result.ok && (result.data as typeof items).length).toBe(1);
   });
 
   test("search_knowledge_base は引数不正で {ok:false}", async () => {

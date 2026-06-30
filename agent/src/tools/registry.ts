@@ -10,14 +10,12 @@ import { createSearchTool } from "./search";
 /**
  * 3 つのツールを定義したレジストリを生成する。
  * @param kb ナレッジベースクライアント
- * @param maxDistance 採用するコサイン距離の上限（既定は Infinity＝フィルタ無効）
  */
 export function createToolRegistry(
   kb: KbClient,
-  maxDistance: number = Infinity,
 ): ErasedToolDefinition[] {
   return [
-    createSearchTool(kb, maxDistance),
+    createSearchTool(kb),
     createListDocumentsTool(kb),
     createGetDocumentTool(kb),
   ];
