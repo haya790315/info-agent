@@ -1,0 +1,22 @@
+{
+  "feature_name": "duplicate-upload-replace",
+  "created_at": "2026-06-30T08:24:41Z",
+  "updated_at": "2026-06-30T08:35:00Z",
+  "language": "zh-CN",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

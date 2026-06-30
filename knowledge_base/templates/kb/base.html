@@ -300,6 +300,43 @@
             margin: 0.2rem 0;
         }
 
+        /* ===== 闪现メッセージ（messages フレームワーク） ===== */
+        /* リダイレクト後のページ先頭に「替换 / 新建 / 失败」などの通知を表示する。
+           等級（success / error）ごとに既存のエラー様式と統一感のある配色を当てる。 */
+        .messages {
+            list-style: none;
+            margin: 0 0 1.5rem;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .message {
+            border-radius: var(--r-s);
+            padding: 0.9rem 1.1rem;
+            font-size: 0.9rem;
+        }
+        /* 成功系（success / info / debug）: 緑系。既存の --success トークンを流用 */
+        .message.success,
+        .message.info,
+        .message.debug {
+            background: var(--success-bg);
+            border: 1px solid #a7f3d0;
+            color: var(--success);
+        }
+        /* 警告系（warning）: 黄系 */
+        .message.warning {
+            background: var(--warning-bg);
+            border: 1px solid #fde68a;
+            color: var(--warning);
+        }
+        /* エラー系（error）: 既存の .error-messages と同系統の赤系で統一 */
+        .message.error {
+            background: var(--danger-bg);
+            border: 1px solid #fecaca;
+            color: var(--danger);
+        }
+
         /* ===== 検索結果 ===== */
         .search-results {
             list-style: none;
@@ -464,6 +501,13 @@
     </header>
 
     <main>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="message {{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 </body>

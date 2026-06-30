@@ -31,6 +31,12 @@
         </div>
 
         <div class="detail-row">
+            <dt>種別</dt>
+            {# 種別が未設定（空文字）の場合は「未分類」と表示する #}
+            <dd>{% if document.category %}{{ document.get_category_display }}{% else %}未分類{% endif %}</dd>
+        </div>
+
+        <div class="detail-row">
             <dt>アップロード日時</dt>
             <dd>{{ document.uploaded_at }}</dd>
         </div>
